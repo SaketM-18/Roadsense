@@ -1,0 +1,1073 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>RoadSense — AI Infrastructure Intelligence</title>
+    <meta name="theme-color" content="#030303">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-void: #030303;
+            --bg-surface: #0a0a0a;
+            --bg-elevated: #111111;
+            --text-primary: #FFFFFF;
+            --text-secondary: rgba(255, 255, 255, 0.6);
+            --text-muted: rgba(255, 255, 255, 0.3);
+            --brand-main: #ccff00;
+            --border: rgba(255, 255, 255, 0.08);
+            --border-hover: rgba(204, 255, 0, 0.3);
+            --rating-1: #00FF88; --rating-2: #88FF00;
+            --rating-3: #F1E108; --rating-4: #FF6B00;
+            --rating-5: #FF2222;
+            --font-display: 'Outfit', system-ui, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+            --ease: cubic-bezier(0.16, 1, 0.3, 1);
+            --ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        @media (pointer: fine) {
+            body { cursor: none; }
+            a, button, input, select, .dropzone { cursor: none !important; }
+        }
+
+        html { overflow-x: hidden; }
+        body {
+            width: 100%; background-color: var(--bg-void); color: var(--text-primary);
+            font-family: var(--font-display); -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+        }
+
+        /* ====== PRELOADER ====== */
+        .preloader {
+            position: fixed; inset: 0; z-index: 99999; background: var(--bg-void);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            transition: clip-path 1s var(--ease-out-expo);
+            clip-path: inset(0 0 0 0);
+        }
+        .preloader.done { clip-path: inset(0 0 100% 0); }
+        .preloader .p-counter {
+            font-family: var(--font-mono); font-size: clamp(60px, 15vw, 140px);
+            font-weight: 800; color: var(--text-primary); line-height: 1;
+        }
+        .preloader .p-label {
+            font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.3em;
+            color: var(--text-muted); text-transform: uppercase; margin-top: 20px;
+        }
+        .preloader .p-bar {
+            width: 120px; height: 2px; background: rgba(255,255,255,0.1);
+            margin-top: 32px; overflow: hidden;
+        }
+        .preloader .p-bar-fill {
+            height: 100%; width: 0%; background: var(--brand-main);
+            transition: width 0.1s linear;
+        }
+
+        /* ====== NOISE OVERLAY ====== */
+        .noise-overlay {
+            position: fixed; inset: 0; z-index: 9999; pointer-events: none; opacity: 0.035;
+            background: url('data:image/svg+xml;utf8,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E');
+        }
+
+        /* ====== CUSTOM CURSOR ====== */
+        .custom-cursor {
+            position: fixed; top: 0; left: 0; width: 20px; height: 20px;
+            border: 2px solid var(--brand-main); border-radius: 50%;
+            pointer-events: none; z-index: 10000;
+            transition: width 0.3s var(--ease), height 0.3s var(--ease), background-color 0.3s, border-color 0.3s;
+            mix-blend-mode: difference;
+        }
+        .custom-cursor.hover {
+            width: 60px; height: 60px;
+            background-color: var(--brand-main); border-color: transparent;
+        }
+
+        /* ====== AMBIENT GLOW ====== */
+        #mouse-glow {
+            position: fixed; top: 0; left: 0; width: 800px; height: 800px;
+            background: radial-gradient(circle, rgba(204,255,0,0.04) 0%, transparent 50%);
+            border-radius: 50%; pointer-events: none; z-index: -1;
+            transform: translate(-50%, -50%); transition: opacity 0.5s; opacity: 0;
+        }
+
+        /* ====== AURORA GRADIENT ORBS (Stripe/Vercel-style) ====== */
+        .aurora-wrap {
+            position: absolute; inset: 0; overflow: hidden; z-index: -3; pointer-events: none;
+        }
+        .aurora-orb {
+            position: absolute; border-radius: 50%; filter: blur(120px); opacity: 0.15;
+        }
+        .aurora-orb.a1 {
+            width: 600px; height: 600px; background: var(--brand-main);
+            top: -200px; right: -100px; animation: auroraFloat1 15s ease-in-out infinite alternate;
+        }
+        .aurora-orb.a2 {
+            width: 500px; height: 500px; background: #00ccff;
+            bottom: -200px; left: -100px; animation: auroraFloat2 18s ease-in-out infinite alternate;
+        }
+        .aurora-orb.a3 {
+            width: 400px; height: 400px; background: #ff00cc;
+            top: 40%; left: 50%; animation: auroraFloat3 12s ease-in-out infinite alternate; opacity: 0.08;
+        }
+        @keyframes auroraFloat1 { 0% { transform: translate(0, 0) scale(1); } 100% { transform: translate(-100px, 80px) scale(1.3); } }
+        @keyframes auroraFloat2 { 0% { transform: translate(0, 0) scale(1); } 100% { transform: translate(80px, -60px) scale(1.2); } }
+        @keyframes auroraFloat3 { 0% { transform: translate(-50%, -50%) scale(1); } 100% { transform: translate(-30%, -60%) scale(1.4); } }
+
+        /* ====== TYPOGRAPHY ====== */
+        .heading-huge {
+            font-size: clamp(3rem, 12vw, 9rem); font-weight: 900; line-height: 0.85;
+            letter-spacing: -0.04em; text-transform: uppercase;
+        }
+        .heading-l {
+            font-size: clamp(2rem, 6vw, 4rem); font-weight: 700; line-height: 1; letter-spacing: -0.03em;
+        }
+        .mono-text { font-family: var(--font-mono); }
+
+        /* Split-text character animation */
+        .split-text .char {
+            display: inline-block; opacity: 0;
+            transform: translateY(100%) rotateX(-80deg);
+            transition: opacity 0.6s var(--ease-out-expo), transform 0.6s var(--ease-out-expo);
+        }
+        .split-text.revealed .char {
+            opacity: 1; transform: translateY(0) rotateX(0);
+        }
+        .split-text .char-space { display: inline-block; width: 0.3em; }
+
+        /* Clip-path line reveal */
+        .line-reveal {
+            overflow: hidden;
+        }
+        .line-reveal-inner {
+            transform: translateY(110%);
+            transition: transform 0.9s var(--ease-out-expo);
+        }
+        .line-reveal.revealed .line-reveal-inner {
+            transform: translateY(0);
+        }
+
+        /* Scroll reveal */
+        .js-enabled .reveal { opacity: 0; transform: translateY(40px); transition: opacity 0.8s var(--ease-out-expo), transform 0.8s var(--ease-out-expo); }
+        .js-enabled .reveal.active { opacity: 1; transform: translateY(0); }
+
+        /* ====== NAV LINK UNDERLINES (Awwwards-style) ====== */
+        .nav-bar {
+            padding: 24px 48px; display: flex; justify-content: space-between; align-items: center;
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            background: linear-gradient(to bottom, rgba(3,3,3,0.9), transparent);
+            backdrop-filter: blur(10px); border-bottom: 1px solid rgba(255,255,255,0.05);
+            transition: padding 0.4s var(--ease), background 0.4s;
+        }
+        .nav-bar.scrolled { padding: 16px 48px; background: rgba(3,3,3,0.97); }
+        @media (max-width: 768px) { .nav-bar, .nav-bar.scrolled { padding: 16px 20px; } }
+
+        .logo {
+            font-size: 24px; font-weight: 900; letter-spacing: -0.02em;
+            display: flex; align-items: center; gap: 12px; text-decoration: none; color: white;
+        }
+        .logo-dot {
+            width: 12px; height: 12px; background-color: var(--brand-main); border-radius: 2px;
+            transition: transform 0.3s var(--ease);
+        }
+        .logo:hover .logo-dot { transform: rotate(90deg) scale(1.2); }
+
+        .nav-links { display: flex; gap: 32px; align-items: center; }
+        .nav-link {
+            font-size: 13px; font-weight: 600; color: var(--text-secondary); text-decoration: none;
+            text-transform: uppercase; letter-spacing: 0.1em; transition: color 0.3s;
+            position: relative; padding-bottom: 2px;
+        }
+        .nav-link::after {
+            content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 1px;
+            background: var(--brand-main);
+            transform: scaleX(0); transform-origin: right center;
+            transition: transform 0.4s var(--ease);
+        }
+        .nav-link:hover { color: var(--brand-main); }
+        .nav-link:hover::after { transform: scaleX(1); transform-origin: left center; }
+        @media (max-width: 768px) { .nav-links { display: none; } }
+
+        /* ====== BUTTONS (Ripple + Magnetic) ====== */
+        .magnetic-wrap { display: inline-block; }
+        .btn {
+            padding: 16px 32px; display: inline-flex; align-items: center; justify-content: center;
+            font-family: var(--font-mono); font-size: 14px; font-weight: 800; text-transform: uppercase;
+            letter-spacing: 0.05em; text-decoration: none; border-radius: 2px;
+            position: relative; z-index: 1; overflow: hidden;
+            transition: background 0.3s, color 0.3s, border-color 0.3s, box-shadow 0.3s;
+        }
+        .btn-primary { background: var(--brand-main); color: #000; border: none; }
+        .btn-primary:hover { box-shadow: 0 0 30px rgba(204,255,0,0.4); background: #d4ff33; }
+        .btn-secondary { background: transparent; color: var(--text-primary); border: 1px solid var(--border); }
+        .btn-secondary:hover { border-color: var(--brand-main); color: var(--brand-main); }
+        .btn .ripple {
+            position: absolute; border-radius: 50%; background: rgba(255,255,255,0.3);
+            transform: scale(0); animation: rippleAnim 0.6s ease-out forwards; pointer-events: none;
+        }
+        @keyframes rippleAnim { to { transform: scale(4); opacity: 0; } }
+
+        /* ====== MARKETING SITE ====== */
+        #marketing-site { display: block; opacity: 0; transition: opacity 0.5s; }
+        #marketing-site.visible { opacity: 1; }
+
+        /* Hero */
+        .section-hero {
+            height: 100vh; min-height: 700px; display: flex; flex-direction: column; justify-content: center;
+            padding: 0 5vw; position: relative; overflow: hidden;
+        }
+        .hero-bg {
+            position: absolute; inset: 0; z-index: -2;
+            background: radial-gradient(ellipse at 50% 0%, rgba(204,255,0,0.12) 0%, transparent 55%);
+        }
+        .hero-grid {
+            position: absolute; inset: -50%; z-index: -1; opacity: 0.15;
+            background-image: linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px);
+            background-size: 60px 60px; will-change: transform;
+            transform: rotateX(60deg) translateY(-100px) translateZ(-200px);
+            animation: gridMove 20s linear infinite;
+        }
+        @keyframes gridMove { 0% { background-position: 0 0; } 100% { background-position: 0 60px; } }
+
+        .hero-eyebrow {
+            font-family: var(--font-mono); font-size: 14px; text-transform: uppercase;
+            color: var(--brand-main); margin-bottom: 24px; letter-spacing: 0.2em;
+        }
+        .hero-title-wrap { perspective: 600px; margin-bottom: 32px; }
+        .hero-desc {
+            font-size: clamp(1.2rem, 2vw, 1.5rem); color: var(--text-secondary);
+            max-width: 600px; line-height: 1.5; font-weight: 300;
+        }
+        .hero-actions { display: flex; gap: 16px; margin-top: 40px; flex-wrap: wrap; }
+
+        .scroll-indicator {
+            position: absolute; bottom: 40px; left: 5vw; display: flex; align-items: center; gap: 12px;
+            font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em;
+        }
+        .scroll-line { width: 1px; height: 60px; background: rgba(255,255,255,0.1); position: relative; overflow: hidden; }
+        .scroll-line::after {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 50%;
+            background: var(--brand-main); animation: scrollDown 2s infinite;
+        }
+        @keyframes scrollDown { 0% { transform: translateY(-100%); } 100% { transform: translateY(200%); } }
+
+        /* ====== HORIZONTAL MARQUEE TICKER ====== */
+        .marquee-section {
+            padding: 40px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+            overflow: hidden; background: var(--bg-void);
+        }
+        .marquee-track {
+            display: flex; width: max-content;
+            animation: marqueeScroll 30s linear infinite;
+        }
+        .marquee-item {
+            font-family: var(--font-mono); font-size: 14px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.15em; color: var(--text-muted);
+            padding: 0 48px; white-space: nowrap; display: flex; align-items: center; gap: 16px;
+        }
+        .marquee-item .dot { width: 6px; height: 6px; background: var(--brand-main); border-radius: 1px; }
+        @keyframes marqueeScroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+
+        /* ====== FEATURE SECTION ====== */
+        .section-feature { padding: 150px 5vw; background: var(--bg-surface); border-top: 1px solid var(--border); }
+        .feature-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; max-width: 1400px; margin: 0 auto; }
+        @media (max-width: 900px) { .feature-grid { grid-template-columns: 1fr; gap: 40px; } }
+
+        /* AI Visualizer */
+        .ai-visualizer {
+            position: relative; aspect-ratio: 4/3; background: #050505;
+            border: 1px solid var(--border); border-radius: 4px; overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+        .ai-road-wrap {
+            position: absolute; inset: 0; transform: perspective(600px) rotateX(60deg) scale(2);
+            transform-origin: bottom; background: linear-gradient(to top, #111, transparent);
+        }
+        .ai-line {
+            position: absolute; top: 0; bottom: 0; left: 50%; width: 4px;
+            background: repeating-linear-gradient(to bottom, transparent, transparent 20px, rgba(255,255,255,0.3) 20px, rgba(255,255,255,0.3) 60px);
+            transform: translateX(-50%); animation: driveRoad 2s linear infinite;
+        }
+        @keyframes driveRoad { 0% { background-position: 0 0; } 100% { background-position: 0 60px; } }
+        .ai-scanner {
+            position: absolute; top: 0; left: 0; right: 0; height: 2px;
+            background: var(--brand-main); box-shadow: 0 0 20px 4px var(--brand-main);
+            animation: scanLine 3s ease-in-out infinite alternate; z-index: 10; opacity: 0.5;
+        }
+        @keyframes scanLine { 0% { top: 10%; } 100% { top: 90%; } }
+        .ai-box {
+            position: absolute; top: 50%; left: 35%; width: 120px; height: 60px;
+            border: 2px solid var(--brand-main); background: rgba(204,255,0,0.1);
+            transform: translate(-50%,-50%) scale(0.8); opacity: 0; transition: all 0.5s;
+        }
+        .ai-box::after {
+            content: '98% ANOMALY'; position: absolute; top: -24px; left: -2px;
+            background: var(--brand-main); color: #000; font-family: var(--font-mono);
+            font-size: 10px; font-weight: 800; padding: 4px 8px; letter-spacing: 0.05em;
+        }
+        .ai-box.active { transform: translate(-50%,-50%) scale(1); opacity: 1; }
+
+        /* ====== 3D TILT FEATURE CARDS ====== */
+        .feature-cards {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;
+            max-width: 1400px; margin: 100px auto 0;
+        }
+        @media (max-width: 900px) { .feature-cards { grid-template-columns: 1fr; } }
+        .f-card {
+            background: linear-gradient(180deg, rgba(255,255,255,0.02) 0%, transparent 100%);
+            border: 1px solid var(--border); padding: 48px 32px;
+            transition: border-color 0.4s, box-shadow 0.4s; position: relative; overflow: hidden;
+            border-top: 2px solid rgba(255,255,255,0.1); will-change: transform;
+            transform-style: preserve-3d;
+        }
+        .f-card::before {
+            content: ''; position: absolute; top: -2px; left: 0; width: 0%; height: 2px;
+            background: var(--brand-main); transition: width 0.6s var(--ease);
+        }
+        .f-card:hover::before { width: 100%; }
+        .f-card:hover { border-color: rgba(255,255,255,0.15); box-shadow: 0 30px 60px rgba(0,0,0,0.5); }
+        /* Glare overlay */
+        .f-card .card-glare {
+            position: absolute; inset: 0; pointer-events: none; opacity: 0;
+            background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.12) 0%, transparent 60%);
+            transition: opacity 0.3s;
+        }
+        .f-card:hover .card-glare { opacity: 1; }
+        .f-icon { font-family: var(--font-mono); font-size: 12px; color: var(--brand-main); margin-bottom: 32px; letter-spacing: 0.1em; display: flex; align-items: center; gap: 12px; }
+        .f-icon::before { content: ''; display: block; width: 24px; height: 1px; background: var(--brand-main); }
+        .f-title { font-family: var(--font-display); font-size: 28px; font-weight: 500; margin-bottom: 16px; letter-spacing: -0.02em; }
+        .f-desc { color: var(--text-secondary); line-height: 1.6; font-size: 15px; font-weight: 300; }
+
+        /* ====== ABOUT / MISSION ====== */
+        .section-about {
+            padding: 150px 5vw; text-align: center; background: var(--bg-elevated);
+            border-top: 1px solid var(--border); position: relative; overflow: hidden;
+        }
+        .about-text {
+            font-size: clamp(1.5rem, 4vw, 3rem); line-height: 1.3; max-width: 1100px;
+            margin: 0 auto; color: var(--text-secondary); font-weight: 500; letter-spacing: -0.02em;
+        }
+        .about-text .highlight {
+            color: var(--text-primary); transition: color 0.3s, text-shadow 0.3s; cursor: default;
+            background: linear-gradient(90deg, var(--brand-main), #00ccff);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* ====== CTA ====== */
+        .section-cta {
+            padding: 150px 5vw; background: var(--brand-main); color: #000;
+            text-align: center; display: flex; flex-direction: column; align-items: center;
+            position: relative; overflow: hidden;
+        }
+        .section-cta .hero-desc { color: rgba(0,0,0,0.7); font-weight: 500; }
+        .btn-dark {
+            background: #000; color: var(--brand-main); border: none;
+            margin-top: 40px; padding: 24px 48px; font-size: 16px;
+            transition: transform 0.3s var(--ease), box-shadow 0.3s;
+        }
+        .btn-dark:hover { background: #111; color: #fff; box-shadow: 0 20px 40px rgba(0,0,0,0.3); transform: scale(1.05); }
+
+        .footer {
+            padding: 48px 5vw; display: flex; justify-content: space-between; align-items: center;
+            font-family: var(--font-mono); font-size: 12px; color: var(--text-muted);
+            border-top: 1px solid var(--border); background: var(--bg-void);
+        }
+
+        /* ====== CINEMATIC TRANSITION ====== */
+        .transition-overlay {
+            position: fixed; inset: 0; z-index: 9998; pointer-events: none;
+            display: none; flex-direction: column;
+        }
+        .transition-overlay.active { display: flex; pointer-events: all; }
+        .transition-slat {
+            flex: 1; background: var(--brand-main); transform: scaleX(0);
+            transition: transform 0.5s var(--ease);
+        }
+        .transition-slat:nth-child(odd) { transform-origin: left center; }
+        .transition-slat:nth-child(even) { transform-origin: right center; }
+        .transition-overlay.closing .transition-slat { transform: scaleX(1); }
+        .transition-slat:nth-child(1) { transition-delay: 0s; }
+        .transition-slat:nth-child(2) { transition-delay: 0.04s; }
+        .transition-slat:nth-child(3) { transition-delay: 0.08s; }
+        .transition-slat:nth-child(4) { transition-delay: 0.12s; }
+        .transition-slat:nth-child(5) { transition-delay: 0.16s; }
+        .transition-slat:nth-child(6) { transition-delay: 0.20s; }
+        .transition-slat:nth-child(7) { transition-delay: 0.24s; }
+        .transition-slat:nth-child(8) { transition-delay: 0.28s; }
+        .transition-overlay.opening .transition-slat { transform: scaleX(1); }
+        .transition-overlay.opening.reveal-out .transition-slat { transform: scaleX(0); }
+        .transition-overlay.opening .transition-slat:nth-child(odd) { transform-origin: right center; }
+        .transition-overlay.opening .transition-slat:nth-child(even) { transform-origin: left center; }
+
+        .transition-hud {
+            position: fixed; inset: 0; z-index: 9999;
+            display: none; flex-direction: column; justify-content: center; align-items: center;
+            pointer-events: none;
+        }
+        .transition-hud.active { display: flex; }
+        .transition-hud .t-logo {
+            font-family: var(--font-display); font-size: 48px; font-weight: 900;
+            color: #000; letter-spacing: -0.02em;
+            opacity: 0; transform: scale(0.8); transition: opacity 0.4s, transform 0.4s var(--ease);
+        }
+        .transition-hud.show-text .t-logo { opacity: 1; transform: scale(1); }
+        .transition-hud .t-status {
+            font-family: var(--font-mono); font-size: 12px; font-weight: 700;
+            color: rgba(0,0,0,0.5); letter-spacing: 0.15em; text-transform: uppercase;
+            margin-top: 16px; opacity: 0; transition: opacity 0.3s;
+        }
+        .transition-hud.show-text .t-status { opacity: 1; }
+        .transition-hud .t-progress { width: 120px; height: 2px; background: rgba(0,0,0,0.15); margin-top: 24px; overflow: hidden; opacity: 0; transition: opacity 0.3s; }
+        .transition-hud.show-text .t-progress { opacity: 1; }
+        .transition-hud .t-progress-fill { height: 100%; width: 0%; background: #000; transition: width 0.8s var(--ease); }
+        .transition-hud.show-text .t-progress-fill { width: 100%; }
+
+        /* ====== APP DASHBOARD ====== */
+        #app-site { display: none; height: 100vh; width: 100%; position: fixed; top: 0; left: 0; background: var(--bg-void); z-index: 1000; }
+        .app-screen { display: none; flex-direction: column; height: 100%; width: 100%; position: absolute; top: 0; left: 0; }
+        .app-screen.active { display: flex; animation: fadeUp 0.5s var(--ease) forwards; }
+        @keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+        .app-scroll { flex: 1; overflow-y: auto; padding: 100px 5vw 120px; }
+        .app-scroll::-webkit-scrollbar { display: none; }
+        .app-nav {
+            position: absolute; top: 0; left: 0; right: 0; padding: 24px 5vw;
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid var(--border); background: var(--bg-void); z-index: 10;
+        }
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); margin: 40px 0; }
+        .stat-box { background: var(--bg-void); padding: 32px 24px; text-align: center; }
+        .stat-val { font-family: var(--font-mono); font-size: clamp(24px, 4vw, 40px); font-weight: 800; }
+        .stat-lbl { font-size: 11px; text-transform: uppercase; color: var(--text-muted); margin-top: 8px; letter-spacing: 0.1em; }
+        .survey-item { display: flex; justify-content: space-between; align-items: center; padding: 24px 0; border-bottom: 1px solid var(--border); cursor: pointer; transition: all 0.3s; }
+        .survey-item:hover { padding-left: 16px; padding-right: 16px; background: var(--bg-surface); border-color: var(--border-hover); }
+        .s-title { font-size: 20px; font-weight: 500; }
+        .s-meta { font-family: var(--font-mono); font-size: 12px; color: var(--text-secondary); margin-top: 8px; }
+        .action-dock { position: fixed; bottom: 0; left: 0; right: 0; padding: 24px 5vw; background: linear-gradient(transparent, var(--bg-void) 40%); display: flex; gap: 16px; z-index: 10; }
+        .action-dock .btn { flex: 1; height: 64px; }
+        .camera-feed { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.5; filter: contrast(1.2) saturate(0.8); }
+        .rec-hud { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: space-between; padding: 48px 5vw; z-index: 2; }
+        .rec-timer { font-family: var(--font-mono); font-size: 72px; font-weight: 800; line-height: 1; margin-top: 8px; text-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+        .btn-stop-rec { width: 80px; height: 80px; border-radius: 50%; border: 2px solid #fff; background: transparent; display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: 0 0 40px rgba(0,0,0,0.5); transition: transform 0.2s; }
+        .btn-stop-rec:active { transform: scale(0.9); }
+        .btn-stop-rec::after { content: ''; width: 32px; height: 32px; background: var(--brand-main); border-radius: 4px; }
+        .rh-score { font-size: clamp(80px, 15vw, 150px); font-weight: 900; line-height: 0.8; letter-spacing: -0.05em; }
+        .rh-desc { font-family: var(--font-mono); font-size: clamp(16px, 3vw, 24px); text-transform: uppercase; font-weight: 700; margin-left: 24px; }
+        .seg-row { display: grid; grid-template-columns: 80px 1fr 40px; gap: 16px; align-items: center; padding: 16px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .seg-bar-bg { height: 2px; background: rgba(255,255,255,0.1); width: 100%; position: relative; overflow: hidden; }
+        .seg-bar-fill { position: absolute; left: 0; top: -1px; height: 4px; transition: width 1s var(--ease); }
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 2000; display: none; justify-content: center; align-items: center; padding: 24px; backdrop-filter: blur(5px); }
+        .modal.active { display: flex; }
+        .modal-box { background: var(--bg-surface); border: 1px solid var(--border); padding: 40px; width: 100%; max-width: 400px; box-shadow: 0 40px 100px rgba(0,0,0,0.8); }
+        .dropzone { border: 1px dashed var(--text-secondary); padding: 40px 20px; text-align: center; cursor: pointer; margin: 24px 0; transition: border-color 0.3s; }
+        .dropzone:hover { border-color: var(--brand-main); }
+        .toast { position: fixed; top: 24px; left: 50%; transform: translate(-50%, -20px); background: #fff; color: #000; padding: 12px 24px; font-family: var(--font-mono); font-size: 12px; font-weight: 700; opacity: 0; transition: all 0.3s; z-index: 3000; pointer-events: none; border-radius: 2px; }
+        .toast.show { opacity: 1; transform: translate(-50%, 0); }
+        .c-1 { color: var(--rating-1); } .b-1 { background: var(--rating-1); }
+        .c-2 { color: var(--rating-2); } .b-2 { background: var(--rating-2); }
+        .c-3 { color: var(--rating-3); } .b-3 { background: var(--rating-3); }
+        .c-4 { color: var(--rating-4); } .b-4 { background: var(--rating-4); }
+        .c-5 { color: var(--rating-5); } .b-5 { background: var(--rating-5); }
+    </style>
+</head>
+<body>
+
+    <!-- PRELOADER -->
+    <div class="preloader" id="preloader">
+        <div class="p-counter" id="p-counter">0</div>
+        <div class="p-label">Loading Experience</div>
+        <div class="p-bar"><div class="p-bar-fill" id="p-bar-fill"></div></div>
+    </div>
+
+    <div class="noise-overlay"></div>
+    <div id="mouse-glow"></div>
+    <div class="custom-cursor" id="cursor"></div>
+
+    <!-- Transition -->
+    <div class="transition-overlay" id="transition-overlay">
+        <div class="transition-slat"></div><div class="transition-slat"></div>
+        <div class="transition-slat"></div><div class="transition-slat"></div>
+        <div class="transition-slat"></div><div class="transition-slat"></div>
+        <div class="transition-slat"></div><div class="transition-slat"></div>
+    </div>
+    <div class="transition-hud" id="transition-hud">
+        <div class="t-logo">ROADSENSE</div>
+        <div class="t-status" id="t-status">INITIALIZING</div>
+        <div class="t-progress"><div class="t-progress-fill" id="t-progress-fill"></div></div>
+    </div>
+
+    <!-- ====== MARKETING WEBSITE ====== -->
+    <div id="marketing-site">
+
+        <nav class="nav-bar" id="main-nav">
+            <a href="#" class="logo" onclick="window.scrollTo({top:0,behavior:'smooth'}); return false;">
+                <div class="logo-dot"></div>
+                ROADSENSE
+            </a>
+            <div class="nav-links">
+                <a href="#how-it-works" class="nav-link">Technology</a>
+                <a href="#about" class="nav-link">Mission</a>
+                <div class="magnetic-wrap">
+                    <a href="#" class="btn btn-secondary magnetic-btn" style="padding: 10px 20px; font-size: 12px;" onclick="launchApp(event)"><span>Launch App</span></a>
+                </div>
+            </div>
+        </nav>
+
+        <section class="section-hero">
+            <div class="aurora-wrap">
+                <div class="aurora-orb a1"></div>
+                <div class="aurora-orb a2"></div>
+                <div class="aurora-orb a3"></div>
+            </div>
+            <div class="hero-bg"></div>
+            <div class="hero-grid" id="parallax-grid"></div>
+
+            <div class="line-reveal"><div class="line-reveal-inner hero-eyebrow">The New Standard in Surveying</div></div>
+            <div class="hero-title-wrap">
+                <h1 class="heading-huge split-text" id="hero-title">Map the Future.</h1>
+            </div>
+            <div class="line-reveal" style="transition-delay: 0.3s"><div class="line-reveal-inner hero-desc">RoadSense transforms any smartphone into an enterprise-grade road surveying tool using edge AI. Record, detect, and classify infrastructure instantly.</div></div>
+            <div class="hero-actions line-reveal" style="transition-delay: 0.5s">
+                <div class="line-reveal-inner" style="display:flex; gap:16px; flex-wrap:wrap;">
+                    <div class="magnetic-wrap"><a href="#" class="btn btn-primary magnetic-btn" onclick="launchApp(event)"><span>Launch Dashboard</span></a></div>
+                    <div class="magnetic-wrap"><a href="#how-it-works" class="btn btn-secondary magnetic-btn"><span>Explore Tech</span></a></div>
+                </div>
+            </div>
+
+            <div class="scroll-indicator">
+                <div class="scroll-line"></div>
+                Scroll to explore
+            </div>
+        </section>
+
+        <!-- Marquee Ticker -->
+        <div class="marquee-section">
+            <div class="marquee-track">
+                <div class="marquee-item"><span class="dot"></span>Computer Vision</div>
+                <div class="marquee-item"><span class="dot"></span>GPS Telemetry</div>
+                <div class="marquee-item"><span class="dot"></span>Edge Processing</div>
+                <div class="marquee-item"><span class="dot"></span>Road Classification</div>
+                <div class="marquee-item"><span class="dot"></span>Infrastructure AI</div>
+                <div class="marquee-item"><span class="dot"></span>Real-Time Analysis</div>
+                <div class="marquee-item"><span class="dot"></span>Open Data Export</div>
+                <div class="marquee-item"><span class="dot"></span>Municipal Integration</div>
+                <!-- Duplicate for seamless loop -->
+                <div class="marquee-item"><span class="dot"></span>Computer Vision</div>
+                <div class="marquee-item"><span class="dot"></span>GPS Telemetry</div>
+                <div class="marquee-item"><span class="dot"></span>Edge Processing</div>
+                <div class="marquee-item"><span class="dot"></span>Road Classification</div>
+                <div class="marquee-item"><span class="dot"></span>Infrastructure AI</div>
+                <div class="marquee-item"><span class="dot"></span>Real-Time Analysis</div>
+                <div class="marquee-item"><span class="dot"></span>Open Data Export</div>
+                <div class="marquee-item"><span class="dot"></span>Municipal Integration</div>
+            </div>
+        </div>
+
+        <section id="how-it-works" class="section-feature">
+            <div class="feature-grid">
+                <div>
+                    <div class="hero-eyebrow reveal">01 / Edge AI Detection</div>
+                    <h2 class="heading-l reveal" style="margin-bottom: 24px;">See what's invisible.</h2>
+                    <p class="hero-desc reveal" style="font-size: 18px; margin-top: 0;">Our proprietary computer vision models process video in real-time, instantly identifying road anomalies, potholes, and degradation with millimeter accuracy. No heavy LiDAR required.</p>
+                </div>
+                <div class="ai-visualizer reveal" id="ai-trigger">
+                    <div class="ai-scanner"></div>
+                    <div class="ai-road-wrap"><div class="ai-line"></div></div>
+                    <div class="ai-box" id="ai-box"></div>
+                </div>
+            </div>
+
+            <div class="feature-cards">
+                <div class="f-card reveal" data-tilt>
+                    <div class="card-glare"></div>
+                    <div class="f-icon">01 // INTEGRATION</div>
+                    <div class="f-title">Hardware Agnostic</div>
+                    <div class="f-desc">Mount any smartphone to your dashboard or handlebars. No expensive proprietary LiDAR or specialized telemetry hardware needed.</div>
+                </div>
+                <div class="f-card reveal" data-tilt style="transition-delay: 0.1s;">
+                    <div class="card-glare"></div>
+                    <div class="f-icon">02 // PROCESSING</div>
+                    <div class="f-title">Instant Analysis</div>
+                    <div class="f-desc">Raw video and GPS telemetry are fused and processed simultaneously on the edge, outputting high-fidelity 10-meter segment ratings in real time.</div>
+                </div>
+                <div class="f-card reveal" data-tilt style="transition-delay: 0.2s;">
+                    <div class="card-glare"></div>
+                    <div class="f-icon">03 // EXPORT</div>
+                    <div class="f-title">Actionable Data</div>
+                    <div class="f-desc">Export comprehensive schema-ready CSVs and plain-text reports instantly, primed for municipal review and immediate contractor dispatch.</div>
+                </div>
+            </div>
+        </section>
+
+        <section id="about" class="section-about">
+            <div class="aurora-wrap">
+                <div class="aurora-orb a2" style="top: -100px; left: auto; right: -100px;"></div>
+            </div>
+            <div class="hero-eyebrow reveal" style="margin-bottom: 40px;">Our Mission</div>
+            <p class="about-text reveal">
+                We believe safe infrastructure is a fundamental right. By democratizing road surveying through software, we empower <span class="highlight">cities, citizens, and contractors</span> to map and repair their communities faster than ever before.
+            </p>
+        </section>
+
+        <section class="section-cta">
+            <h2 class="heading-huge split-text" id="cta-title" style="font-size: clamp(3rem, 10vw, 8rem);">Ready to Deploy?</h2>
+            <p class="hero-desc reveal" style="margin: 24px auto 0; color: rgba(0,0,0,0.7);">Access the dashboard immediately. No credit card required.</p>
+            <div class="magnetic-wrap reveal">
+                <a href="#" class="btn btn-dark magnetic-btn" onclick="launchApp(event)"><span>Access Dashboard →</span></a>
+            </div>
+        </section>
+
+        <div class="footer">
+            <div>© 2026 ROADSENSE INC.</div>
+            <div>DEVELOPED FOR ROAD HEALTH SURVEYING</div>
+        </div>
+    </div>
+
+    <!-- ====== APP DASHBOARD ====== -->
+    <div id="app-site">
+        <div class="app-nav">
+            <div class="logo" style="font-size: 18px;"><div class="logo-dot"></div>ROADSENSE APP</div>
+            <a href="#" class="nav-link" onclick="exitApp(event)">← Exit to Site</a>
+        </div>
+        <div id="app-home" class="app-screen active">
+            <div class="app-scroll">
+                <div class="hero-eyebrow" style="color:var(--text-muted)">Command Center</div>
+                <h1 class="heading-l" style="text-transform: uppercase;">Telemetry<br>Overview</h1>
+                <div class="stats-grid">
+                    <div class="stat-box"><div class="stat-val" id="d-surveys">0</div><div class="stat-lbl">Surveys</div></div>
+                    <div class="stat-box"><div class="stat-val" id="d-dist">0.0</div><div class="stat-lbl">Km Logged</div></div>
+                    <div class="stat-box"><div class="stat-val" id="d-avg">—</div><div class="stat-lbl">Avg Rating</div></div>
+                </div>
+                <div class="hero-eyebrow" style="color:var(--text-muted); border-bottom: 1px solid var(--border); padding-bottom:16px; margin-top:48px;">Survey Database</div>
+                <div id="app-survey-list"></div>
+            </div>
+            <div class="action-dock">
+                <div class="magnetic-wrap" style="flex:1;"><button class="btn btn-secondary magnetic-btn" style="width:100%" onclick="document.getElementById('app-modal-import').classList.add('active')"><span>Import Telemetry</span></button></div>
+                <div class="magnetic-wrap" style="flex:1;"><button class="btn btn-primary magnetic-btn" style="width:100%" onclick="startRec()"><span>Initiate Survey</span></button></div>
+            </div>
+        </div>
+        <div id="app-rec" class="app-screen">
+            <video id="cam-feed" class="camera-feed" autoplay muted playsinline></video>
+            <div class="rec-hud">
+                <div style="display:flex; justify-content:space-between;">
+                    <div>
+                        <div class="mono-text" style="color:var(--brand-main); font-size:12px; font-weight:700;">[ RECORDING ACTIVE ]</div>
+                        <div class="rec-timer" id="rec-timer">00:00</div>
+                    </div>
+                    <div class="mono-text" style="font-size:10px; background:rgba(0,0,0,0.5); padding: 8px 12px; border:1px solid var(--border); height: fit-content;">
+                        GPS: <span id="gps-text" style="color:var(--brand-main)">SEARCHING</span>
+                    </div>
+                </div>
+                <div style="display:flex; justify-content:center;"><button class="btn-stop-rec" onclick="stopRec()"></button></div>
+            </div>
+        </div>
+        <div id="app-results" class="app-screen">
+            <div class="app-scroll">
+                <button class="btn btn-secondary" style="border:none; padding:0; margin-bottom: 32px;" onclick="showAppScreen('app-home')"><span>← Return to Database</span></button>
+                <div style="border-bottom: 1px solid var(--border); padding-bottom:48px; margin-bottom:48px;">
+                    <div class="hero-eyebrow" style="color:var(--text-muted)">Overall Assessment</div>
+                    <div style="display:flex; align-items:baseline;">
+                        <div class="rh-score" id="res-score">—</div>
+                        <div class="rh-desc" id="res-desc">—</div>
+                    </div>
+                    <div class="stats-grid" style="margin-top:24px;">
+                        <div class="stat-box"><div class="stat-val" id="res-dist">—</div><div class="stat-lbl">Meters</div></div>
+                        <div class="stat-box"><div class="stat-val" id="res-issues">—</div><div class="stat-lbl">Anomalies</div></div>
+                        <div class="stat-box"><div class="stat-val" id="res-date" style="font-size: clamp(16px, 2vw, 24px); margin-top:12px;">—</div><div class="stat-lbl">Date</div></div>
+                    </div>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid var(--border); padding-bottom:16px; margin-bottom:16px;">
+                    <span class="hero-eyebrow" style="margin:0; color:var(--text-muted)">Network Map</span>
+                    <select id="seg-size" class="mono-text" style="background:transparent; color:white; border:none; outline:none; border-bottom:1px dashed var(--text-secondary); cursor:pointer;">
+                        <option value="10">10m</option><option value="20" selected>20m</option><option value="50">50m</option>
+                    </select>
+                </div>
+                <div id="seg-list"></div>
+            </div>
+            <div class="action-dock">
+                <div class="magnetic-wrap" style="flex:1;"><button class="btn btn-secondary magnetic-btn" style="width:100%" onclick="exportCSV()"><span>Export Data</span></button></div>
+                <div class="magnetic-wrap" style="flex:1;"><button class="btn btn-primary magnetic-btn" style="width:100%" onclick="exportReport()"><span>Generate Report</span></button></div>
+            </div>
+        </div>
+        <div class="modal" id="app-modal-import">
+            <div class="modal-box">
+                <h3 class="heading-l" style="font-size: 24px; margin-bottom:16px;">Upload Data</h3>
+                <p class="mono-text" style="font-size:12px; color:var(--text-secondary); line-height:1.5;">Select a fused CSV file containing latitude, longitude, and model labels.</p>
+                <div class="dropzone" onclick="document.getElementById('file-input').click()">
+                    <span class="mono-text" style="font-size:12px;">CLICK TO BROWSE</span>
+                </div>
+                <input type="file" id="file-input" accept=".csv" style="display:none">
+                <button class="btn btn-secondary" style="width:100%" onclick="document.getElementById('app-modal-import').classList.remove('active')"><span>Cancel</span></button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast">Message</div>
+
+    <script>
+    (function() {
+        'use strict';
+        document.body.classList.add('js-enabled');
+        const $ = id => document.getElementById(id);
+
+        /* ====== PRELOADER ====== */
+        const preloader = $('preloader');
+        const pCounter = $('p-counter');
+        const pBarFill = $('p-bar-fill');
+        const marketingSite = $('marketing-site');
+        let loadProgress = 0;
+        const loadInterval = setInterval(() => {
+            loadProgress += Math.random() * 12 + 3;
+            if (loadProgress > 100) loadProgress = 100;
+            const val = Math.round(loadProgress);
+            if (pCounter) pCounter.textContent = val;
+            if (pBarFill) pBarFill.style.width = val + '%';
+            if (val >= 100) {
+                clearInterval(loadInterval);
+                setTimeout(() => {
+                    if (preloader) preloader.classList.add('done');
+                    if (marketingSite) marketingSite.classList.add('visible');
+                    // Trigger hero animations after preloader
+                    setTimeout(initHeroAnimations, 200);
+                }, 400);
+            }
+        }, 50);
+
+        /* ====== SPLIT TEXT ENGINE ====== */
+        const splitText = (el) => {
+            if (!el) return;
+            const text = el.textContent;
+            el.innerHTML = '';
+            let charIdx = 0;
+            for (let i = 0; i < text.length; i++) {
+                if (text[i] === ' ') {
+                    const space = document.createElement('span');
+                    space.className = 'char-space';
+                    el.appendChild(space);
+                } else {
+                    const span = document.createElement('span');
+                    span.className = 'char';
+                    span.textContent = text[i];
+                    span.style.transitionDelay = (charIdx * 0.03) + 's';
+                    el.appendChild(span);
+                    charIdx++;
+                }
+            }
+        };
+
+        // Prepare split texts
+        splitText($('hero-title'));
+        splitText($('cta-title'));
+
+        const initHeroAnimations = () => {
+            // Reveal hero split text
+            const heroTitle = $('hero-title');
+            if (heroTitle) heroTitle.classList.add('revealed');
+
+            // Reveal line-reveals in hero
+            document.querySelectorAll('.section-hero .line-reveal').forEach((el, i) => {
+                setTimeout(() => el.classList.add('revealed'), 300 + i * 200);
+            });
+        };
+
+        /* ====== CUSTOM CURSOR ====== */
+        const cursor = $('cursor');
+        const glow = $('mouse-glow');
+        let mouseX = window.innerWidth / 2, mouseY = window.innerHeight / 2;
+        let cursorX = mouseX, cursorY = mouseY;
+
+        if (cursor && window.matchMedia("(pointer: fine)").matches) {
+            document.addEventListener('mousemove', e => {
+                mouseX = e.clientX; mouseY = e.clientY;
+                if (glow) { glow.style.opacity = '1'; glow.style.left = mouseX + 'px'; glow.style.top = mouseY + 'px'; }
+            });
+            document.addEventListener('mouseleave', () => { if (glow) glow.style.opacity = '0'; });
+
+            const renderCursor = () => {
+                cursorX += (mouseX - cursorX) * 0.15;
+                cursorY += (mouseY - cursorY) * 0.15;
+                if (cursor) cursor.style.transform = `translate(${cursorX}px, ${cursorY}px)`;
+                requestAnimationFrame(renderCursor);
+            };
+            requestAnimationFrame(renderCursor);
+
+            // Hover states — use event delegation for dynamic elements
+            document.addEventListener('mouseover', e => {
+                if (e.target.closest('a, button, input, select, .dropzone, .survey-item, .f-card')) {
+                    cursor.classList.add('hover');
+                }
+            });
+            document.addEventListener('mouseout', e => {
+                if (e.target.closest('a, button, input, select, .dropzone, .survey-item, .f-card')) {
+                    cursor.classList.remove('hover');
+                }
+            });
+        }
+
+        /* ====== MAGNETIC BUTTONS ====== */
+        document.querySelectorAll('.magnetic-wrap').forEach(wrap => {
+            const btn = wrap.querySelector('.magnetic-btn');
+            if (!btn) return;
+            wrap.addEventListener('mousemove', e => {
+                const rect = wrap.getBoundingClientRect();
+                const x = e.clientX - rect.left - rect.width / 2;
+                const y = e.clientY - rect.top - rect.height / 2;
+                btn.style.transform = `translate(${x * 0.3}px, ${y * 0.3}px)`;
+                btn.style.transition = 'transform 0.15s ease-out';
+            });
+            wrap.addEventListener('mouseleave', () => {
+                btn.style.transform = 'translate(0px, 0px)';
+                btn.style.transition = 'transform 0.4s var(--ease)';
+            });
+        });
+
+        /* ====== BUTTON RIPPLE ====== */
+        document.addEventListener('click', e => {
+            const btn = e.target.closest('.btn');
+            if (!btn) return;
+            const rect = btn.getBoundingClientRect();
+            const ripple = document.createElement('span');
+            ripple.className = 'ripple';
+            const size = Math.max(rect.width, rect.height);
+            ripple.style.width = ripple.style.height = size + 'px';
+            ripple.style.left = (e.clientX - rect.left - size / 2) + 'px';
+            ripple.style.top = (e.clientY - rect.top - size / 2) + 'px';
+            btn.appendChild(ripple);
+            setTimeout(() => ripple.remove(), 700);
+        });
+
+        /* ====== 3D TILT CARDS ====== */
+        document.querySelectorAll('[data-tilt]').forEach(card => {
+            const glare = card.querySelector('.card-glare');
+            card.addEventListener('mousemove', e => {
+                const rect = card.getBoundingClientRect();
+                const x = (e.clientX - rect.left) / rect.width;
+                const y = (e.clientY - rect.top) / rect.height;
+                const rotateX = (0.5 - y) * 15;
+                const rotateY = (x - 0.5) * 15;
+                card.style.transform = `perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.03, 1.03, 1.03)`;
+                if (glare) glare.style.background = `radial-gradient(circle at ${x * 100}% ${y * 100}%, rgba(255,255,255,0.15) 0%, transparent 60%)`;
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'perspective(800px) rotateX(0) rotateY(0) scale3d(1,1,1)';
+                card.style.transition = 'transform 0.5s var(--ease)';
+            });
+            card.addEventListener('mouseenter', () => {
+                card.style.transition = 'none';
+            });
+        });
+
+        /* ====== PARALLAX SCROLL ====== */
+        const title = $('hero-title');
+        const grid = $('parallax-grid');
+        const nav = $('main-nav');
+        window.addEventListener('scroll', () => {
+            const y = window.scrollY;
+            if (title) title.style.transform = `translateY(${y * 0.35}px)`;
+            if (grid) grid.style.transform = `rotateX(60deg) translateY(${-100 + y * 0.15}px) translateZ(-200px)`;
+            if (nav) { y > 50 ? nav.classList.add('scrolled') : nav.classList.remove('scrolled'); }
+        }, { passive: true });
+
+        /* ====== SCROLL REVEAL (IntersectionObserver) ====== */
+        try {
+            const revealObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('active');
+                        if (entry.target.id === 'ai-trigger') {
+                            setTimeout(() => { const box = $('ai-box'); if (box) box.classList.add('active'); }, 500);
+                        }
+                    }
+                });
+            }, { threshold: 0.1 });
+            document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+
+            // CTA split text reveal
+            const ctaObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('revealed');
+                        ctaObserver.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.2 });
+            const ctaTitle = $('cta-title');
+            if (ctaTitle) ctaObserver.observe(ctaTitle);
+
+            // Line reveals outside hero
+            const lineRevealObs = new IntersectionObserver((entries) => {
+                entries.forEach(entry => { if (entry.isIntersecting) entry.target.classList.add('revealed'); });
+            }, { threshold: 0.1 });
+            document.querySelectorAll('.section-feature .line-reveal, .section-about .line-reveal').forEach(el => lineRevealObs.observe(el));
+
+        } catch (e) {
+            document.querySelectorAll('.reveal').forEach(el => el.classList.add('active'));
+            document.querySelectorAll('.split-text').forEach(el => el.classList.add('revealed'));
+            document.querySelectorAll('.line-reveal').forEach(el => el.classList.add('revealed'));
+        }
+
+        /* ====== CINEMATIC TRANSITION ====== */
+        const overlay = $('transition-overlay');
+        const hud = $('transition-hud');
+        const tStatus = $('t-status');
+        const tProgressFill = $('t-progress-fill');
+        let transitioning = false;
+
+        const scrambleStatus = (messages, onDone) => {
+            let msgIdx = 0;
+            const sc = '█▓▒░!<>-_\\/[]{}—=+*^?#ABCDEF0123456789';
+            const next = () => {
+                if (msgIdx >= messages.length) { if (onDone) onDone(); return; }
+                const target = messages[msgIdx]; let iter = 0;
+                const iv = setInterval(() => {
+                    if (tStatus) tStatus.textContent = target.split('').map((ch, i) => i < iter ? target[i] : sc[Math.floor(Math.random() * sc.length)]).join('');
+                    if (iter >= target.length) { clearInterval(iv); msgIdx++; setTimeout(next, 200); }
+                    iter += 0.8;
+                }, 25);
+            };
+            next();
+        };
+
+        const runTransition = (onMidpoint, messages) => {
+            if (transitioning) return; transitioning = true;
+            overlay.className = 'transition-overlay active closing';
+            if (tProgressFill) tProgressFill.style.width = '0%';
+            setTimeout(() => {
+                hud.className = 'transition-hud active show-text';
+                if (tProgressFill) { tProgressFill.style.transition = 'none'; tProgressFill.style.width = '0%'; tProgressFill.offsetHeight; tProgressFill.style.transition = 'width 0.8s var(--ease)'; tProgressFill.style.width = '100%'; }
+                scrambleStatus(messages, () => {
+                    if (onMidpoint) onMidpoint();
+                    setTimeout(() => {
+                        hud.className = 'transition-hud';
+                        overlay.className = 'transition-overlay active opening';
+                        overlay.offsetHeight;
+                        overlay.classList.add('reveal-out');
+                        setTimeout(() => { overlay.className = 'transition-overlay'; transitioning = false; }, 700);
+                    }, 300);
+                });
+            }, 550);
+        };
+
+        window.launchApp = (e) => {
+            if (e) e.preventDefault();
+            runTransition(() => {
+                $('marketing-site').style.display = 'none';
+                $('app-site').style.display = 'block';
+                document.body.style.overflow = 'hidden';
+                if (glow) glow.style.display = 'none';
+                renderDashboard();
+            }, ['AUTHENTICATING', 'LOADING MODULES', 'DEPLOYING DASHBOARD']);
+        };
+
+        window.exitApp = (e) => {
+            if (e) e.preventDefault();
+            runTransition(() => {
+                $('app-site').style.display = 'none';
+                $('marketing-site').style.display = 'block';
+                document.body.style.overflow = 'auto';
+                if (glow) glow.style.display = 'block';
+                window.scrollTo(0, 0);
+            }, ['SAVING STATE', 'CLOSING SESSION']);
+        };
+
+        /* ====== APP STATE ====== */
+        let loadedSurveys = [];
+        try { const stored = localStorage.getItem('roadsense_surveys'); if (stored) loadedSurveys = JSON.parse(stored); } catch (e) {}
+
+        const state = {
+            surveys: loadedSurveys, curSurvey: null, curSegments: [],
+            rec: { active: false, start: null, readings: [], timer: null, stream: null, recorder: null, chunks: [], gpsWatch: null, lat: null, lon: null }
+        };
+
+        window.showAppScreen = name => {
+            ['app-home', 'app-rec', 'app-results'].forEach(id => { const el = $(id); if (el) el.classList.remove('active'); });
+            setTimeout(() => { const el = $(name); if (el) el.classList.add('active'); }, 10);
+        };
+
+        const toast = msg => { const t = $('toast'); if (!t) return; t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000); };
+        const haversine = (a1, o1, a2, o2) => { const R = 6371000, dr = Math.PI / 180; const a = Math.sin((a2 - a1) * dr / 2) ** 2 + Math.cos(a1 * dr) * Math.cos(a2 * dr) * Math.sin((o2 - o1) * dr / 2) ** 2; return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)); };
+        const rColors = ['', 'c-1', 'c-2', 'c-3', 'c-4', 'c-5'];
+        const rBgs = ['', 'b-1', 'b-2', 'b-3', 'b-4', 'b-5'];
+        const rLabels = ['', 'EXCELLENT', 'GOOD', 'FAIR', 'POOR', 'SEVERE'];
+
+        const renderDashboard = () => {
+            const sc = $('d-surveys'); const sl = $('app-survey-list'); if (!sc || !sl) return;
+            sc.textContent = state.surveys.length;
+            if (!state.surveys.length) { sl.innerHTML = `<p class="mono-text" style="color:var(--text-muted); padding: 24px 0;">DATABASE EMPTY</p>`; $('d-dist').textContent = '0.0'; $('d-avg').textContent = '—'; return; }
+            let td = 0, tr = 0, html = '';
+            state.surveys.slice().reverse().forEach((s, i) => {
+                td += s.dist || 0; tr += s.rating || 0; const r = Math.round(s.rating || 0);
+                html += `<div class="survey-item" onclick="viewSurvey(${state.surveys.length - 1 - i})"><div><div class="s-title">${s.name || 'Unknown'}</div><div class="s-meta">${s.date || ''} | ${(s.dist || 0).toFixed(0)}m</div></div><div class="mono-text ${rColors[r]}" style="font-size:24px; font-weight:800;">${(s.rating || 0).toFixed(1)}</div></div>`;
+            });
+            $('d-dist').textContent = (td / 1000).toFixed(1); $('d-avg').textContent = (tr / state.surveys.length).toFixed(1); sl.innerHTML = html;
+        };
+
+        window.viewSurvey = idx => { if (!state.surveys[idx]) return; state.curSurvey = state.surveys[idx]; processSegments(state.curSurvey.rows || [], parseInt($('seg-size')?.value || '20')); showAppScreen('app-results'); };
+
+        window.startRec = async () => {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+                state.rec.stream = stream; const cam = $('cam-feed'); if (cam) cam.srcObject = stream;
+                state.rec.chunks = []; state.rec.recorder = new MediaRecorder(stream);
+                state.rec.recorder.ondataavailable = e => { if (e.data.size) state.rec.chunks.push(e.data); }; state.rec.recorder.start(1000);
+                if (navigator.geolocation) { state.rec.gpsWatch = navigator.geolocation.watchPosition(p => { state.rec.lat = p.coords.latitude; state.rec.lon = p.coords.longitude; const gt = $('gps-text'); if (gt) { gt.textContent = 'LOCKED'; gt.style.color = 'var(--brand-main)'; } }, () => { const gt = $('gps-text'); if (gt) { gt.textContent = 'LOST'; gt.style.color = 'var(--rating-5)'; } }, { enableHighAccuracy: true }); }
+                state.rec.active = true; state.rec.start = Date.now(); state.rec.readings = [];
+                state.rec.timer = setInterval(() => { const s = Math.floor((Date.now() - state.rec.start) / 1000); const rt = $('rec-timer'); if (rt) rt.textContent = `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`; if (state.rec.lat) state.rec.readings.push({ timestamp: Date.now(), latitude: state.rec.lat, longitude: state.rec.lon, Label: 0 }); }, 500);
+                showAppScreen('app-rec'); toast('Telemetry tracking initiated');
+            } catch (e) { toast('Camera access denied'); }
+        };
+
+        window.stopRec = () => {
+            state.rec.active = false; if (state.rec.timer) clearInterval(state.rec.timer);
+            if (state.rec.recorder) { state.rec.recorder.onstop = () => { if (state.rec.chunks.length > 0) { const blob = new Blob(state.rec.chunks, { type: 'video/webm' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `roadsense_video_${Date.now()}.webm`; a.click(); setTimeout(() => URL.revokeObjectURL(url), 100); } }; state.rec.recorder.stop(); }
+            if (state.rec.stream) state.rec.stream.getTracks().forEach(t => t.stop());
+            if (state.rec.gpsWatch) navigator.geolocation.clearWatch(state.rec.gpsWatch);
+            if (state.rec.readings.length < 5) { toast('Insufficient GPS data'); showAppScreen('app-home'); return; }
+            try { const hdr = Object.keys(state.rec.readings[0]); const csv = [hdr.join(','), ...state.rec.readings.map(r => hdr.map(h => r[h]).join(','))].join('\n'); download(csv, 'text/csv', `roadsense_raw_${Date.now()}.csv`); toast('Telemetry and Video exported'); } catch (e) {}
+            showAppScreen('app-home');
+        };
+
+        const download = (data, type, name) => { try { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([data], { type })); a.download = name; a.click(); } catch (e) {} };
+
+        const fileInput = $('file-input');
+        if (fileInput) {
+            fileInput.onchange = e => {
+                if (!e.target.files.length) return; const r = new FileReader();
+                r.onload = ev => { try { const lines = ev.target.result.trim().split('\n'); if (lines.length < 2) return toast('File is empty'); const hdrs = lines[0].split(',').map(h => h.trim()); const rows = lines.slice(1).map(l => { const obj = {}; l.split(',').forEach((v, i) => obj[hdrs[i]] = v.trim()); return obj; }); if (!rows[0].latitude || (!rows[0].Label && !rows[0].label)) return toast('Invalid data schema'); const survey = { name: `Scan ID-${Math.floor(Math.random() * 10000)}`, date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }), rows }; const segs = buildSegments(rows, 20); if (!segs.length) return toast('No viable segments found'); survey.dist = segs.reduce((a, s) => a + s.distance, 0); survey.rating = segs.reduce((a, s) => a + s.rating, 0) / segs.length; state.surveys.push(survey); try { localStorage.setItem('roadsense_surveys', JSON.stringify(state.surveys)); } catch (err) {} $('app-modal-import').classList.remove('active'); state.curSurvey = survey; processSegments(rows, 20); showAppScreen('app-results'); toast('Data assimilated'); } catch (err) { toast('Error parsing file'); } };
+                r.readAsText(e.target.files[0]);
+            };
+        }
+
+        const buildSegments = (rows, size) => {
+            const g = rows.filter(r => r.latitude && !isNaN(r.latitude)); if (g.length < 2) return [];
+            let cum = 0; g[0]._d = 0; for (let i = 1; i < g.length; i++) { cum += haversine(+g[i - 1].latitude, +g[i - 1].longitude, +g[i].latitude, +g[i].longitude); g[i]._d = cum; }
+            const segs = []; let s = 0, idx = 0;
+            while (s < cum) { const e = s + size; const sr = g.filter(r => r._d >= s && r._d < e); if (sr.length) { const iss = sr.filter(r => +(r.Label || r.label) === 1).length; const d = iss / sr.length; segs.push({ id: idx, s: Math.round(s), e: Math.round(Math.min(e, cum)), distance: Math.min(size, cum - s), issues: iss, density: d, rating: d === 0 ? 1 : d < 0.05 ? 2 : d < 0.15 ? 3 : d < 0.3 ? 4 : 5 }); } s = e; idx++; }
+            return segs;
+        };
+
+        const processSegments = (rows, size) => {
+            const segs = buildSegments(rows, size); state.curSegments = segs; if (!segs.length) return;
+            const avg = segs.reduce((a, s) => a + s.rating, 0) / segs.length; const r = Math.round(avg);
+            $('res-score').textContent = avg.toFixed(1); $('res-score').className = `rh-score ${rColors[r]}`;
+            $('res-desc').textContent = rLabels[r]; $('res-desc').className = `rh-desc ${rColors[r]}`;
+            $('res-dist').textContent = Math.round(segs.reduce((a, s) => a + s.distance, 0));
+            $('res-issues').textContent = segs.reduce((a, s) => a + s.issues, 0);
+            $('res-date').textContent = state.curSurvey?.date || '';
+            let html = ''; segs.forEach(seg => { const bw = Math.min(100, seg.density * 100); html += `<div class="seg-row"><div class="mono-text" style="font-size:12px; color:var(--text-secondary);">${seg.s}-${seg.e}m</div><div class="seg-bar-bg"><div class="seg-bar-fill ${rBgs[seg.rating]}" style="width:0" data-w="${bw}%"></div></div><div class="mono-text ${rColors[seg.rating]}" style="font-size:16px; font-weight:800; text-align:right;">${seg.rating}</div></div>`; });
+            $('seg-list').innerHTML = html;
+            setTimeout(() => { document.querySelectorAll('.seg-bar-fill').forEach(el => el.style.width = el.getAttribute('data-w')); }, 100);
+        };
+
+        const segSize = $('seg-size'); if (segSize) segSize.onchange = e => { if (state.curSurvey && state.curSurvey.rows) processSegments(state.curSurvey.rows, parseInt(e.target.value)); };
+        window.exportCSV = () => { if (!state.curSegments.length) return; const csv = ['Start_m,End_m,Rating,Label,Issues,Density\n'].concat(state.curSegments.map(s => `${s.s},${s.e},${s.rating},${rLabels[s.rating]},${s.issues},${s.density.toFixed(4)}`)).join('\n'); download(csv, 'text/csv', 'roadsense_export.csv'); };
+        window.exportReport = () => { if (!state.curSegments.length) return; const avg = (state.curSegments.reduce((a, s) => a + s.rating, 0) / state.curSegments.length).toFixed(1); const dist = state.curSegments.reduce((a, s) => a + s.distance, 0); const iss = state.curSegments.reduce((a, s) => a + s.issues, 0); const r = `ROADSENSE REPORT\n========================\nOverall: ${avg}\nDistance: ${dist}m\nIssues: ${iss}\n\n` + state.curSegments.map(s => `[${s.s}-${s.e}m] Rating: ${s.rating} | ${s.issues} issues`).join('\n'); download(r, 'text/plain', 'roadsense_report.txt'); };
+
+    })();
+    </script>
+</body>
+</html>

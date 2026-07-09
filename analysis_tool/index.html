@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Road Health — Post-Ride Analyzer</title>
+    <meta name="description" content="Analyze ride data, detect potholes and speed breakers, and label them on a map.">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #06080f;
+            --bg2: #0d1117;
+            --bg3: rgba(255,255,255,0.04);
+            --border: rgba(255,255,255,0.08);
+            --text: #f0f6fc;
+            --text2: rgba(240,246,252,0.5);
+            --text3: rgba(240,246,252,0.3);
+            --accent: #00d4ff;
+            --pothole: #ef4444;
+            --breaker: #f97316;
+            --rough: #a855f7;
+            --normal: #22c55e;
+            --font: 'Inter', sans-serif;
+        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body {
+            height: 100%; width: 100%;
+            font-family: var(--font);
+            background: var(--bg);
+            color: var(--text);
+            overflow: hidden;
+        }
+        .screen { display: none; width: 100%; height: 100%; }
+        .screen.active { display: flex; }
+
+        /* ===== UPLOAD SCREEN ===== */
+        #screen-upload {
+            align-items: center; justify-content: center;
+            flex-direction: column; gap: 24px;
+            background: radial-gradient(ellipse at 50% 30%, rgba(0,212,255,0.06) 0%, transparent 60%), var(--bg);
+        }
+        .upload-title { font-size: 28px; font-weight: 800; }
+        .upload-title span { color: var(--accent); }
+        .upload-zone {
+            width: 500px; max-width: 90vw; height: 220px;
+            border: 2px dashed var(--border);
+            border-radius: 20px;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            gap: 12px; cursor: pointer;
+            transition: border-color 0.3s, background 0.3s;
+        }
+        .upload-zone:hover, .upload-zone.dragover {
+            border-color: var(--accent);
+            background: rgba(0,212,255,0.04);
+        }
+        .upload-zone .icon { font-size: 48px; }
+        .upload-zone p { font-size: 14px; color: var(--text2); }
+        .upload-zone input { display: none; }
+
+        /* ===== ANALYSIS SCREEN ===== */
+        #screen-analysis {
+            flex-direction: column;
+        }
+        .top-bar {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 10px 16px;
+            background: var(--bg2);
+            border-bottom: 1px solid var(--border);
+            gap: 12px;
+            flex-shrink: 0;
+        }
+        .top-bar .ride-info { font-size: 13px; color: var(--text2); }
+        .top-bar .ride-info b { color: var(--text); }
+        .top-bar .controls { display: flex; gap: 8px; }
+        .btn {
+            padding: 8px 16px; font-size: 12px; font-weight: 700;
+            font-family: var(--font); border: none; border-radius: 8px;
+            cursor: pointer; transition: transform 0.1s;
+        }
+        .btn:active { transform: scale(0.96); }
+        .btn-primary { background: var(--accent); color: #000; }
+        .btn-secondary { background: var(--bg3); color: var(--text); border: 1px solid var(--border); }
+
+        .main-area {
+            display: flex; flex: 1; overflow: hidden;
+        }
+        .map-waveform {
+            flex: 1; display: flex; flex-direction: column; overflow: hidden;
+        }
+        #map {
+            flex: 1; min-height: 200px; z-index: 1;
+        }
+        .waveform-panel {
+            height: 180px; flex-shrink: 0;
+            background: var(--bg2);
+            border-top: 1px solid var(--border);
+            position: relative;
+        }
+        #waveform-canvas { width: 100%; height: 100%; display: block; cursor: crosshair; }
+        .wf-label {
+            position: absolute; top: 6px; left: 10px;
+            font-size: 10px; font-weight: 600; color: var(--text3);
+            text-transform: uppercase; letter-spacing: 0.5px; pointer-events: none;
+        }
+        .wf-legend {
+            position: absolute; top: 6px; right: 10px;
+            display: flex; gap: 12px; font-size: 10px; font-weight: 600; pointer-events: none;
+        }
+        .wf-legend span { display: flex; align-items: center; gap: 4px; }
+        .wf-legend .dot { width: 8px; height: 8px; border-radius: 50%; }
+
+        /* ===== SIDEBAR ===== */
+        .sidebar {
+            width: 320px; flex-shrink: 0;
+            background: var(--bg2);
+            border-left: 1px solid var(--border);
+            display: flex; flex-direction: column;
+            overflow: hidden;
+        }
+        .sidebar-header {
+            padding: 14px 16px;
+            font-size: 14px; font-weight: 700;
+            border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .sidebar-header .count {
+            background: var(--accent); color: #000;
+            padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 800;
+        }
+        .event-list {
+            flex: 1; overflow-y: auto; padding: 8px;
+        }
+        .event-card {
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+        .event-card:hover, .event-card.selected {
+            border-color: var(--accent);
+        }
+        .event-card .ec-top {
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .event-card .ec-type {
+            font-size: 13px; font-weight: 700;
+            padding: 2px 8px; border-radius: 6px; color: #fff;
+        }
+        .ec-type.pothole { background: var(--pothole); }
+        .ec-type.speedbreaker { background: var(--breaker); }
+        .ec-type.rough_patch { background: var(--rough); }
+        .event-card .ec-time { font-size: 11px; color: var(--text3); }
+        .event-card .ec-details {
+            display: flex; gap: 12px; margin-top: 8px;
+            font-size: 11px; color: var(--text2);
+        }
+        .ec-actions {
+            display: flex; gap: 4px; margin-top: 8px;
+        }
+        .ec-actions button {
+            flex: 1; padding: 6px; font-size: 10px; font-weight: 700;
+            font-family: var(--font); border: none; border-radius: 6px;
+            cursor: pointer; color: #fff; text-transform: uppercase;
+        }
+        .ec-actions .btn-p { background: var(--pothole); }
+        .ec-actions .btn-s { background: var(--breaker); }
+        .ec-actions .btn-r { background: var(--rough); }
+        .ec-actions .btn-x { background: rgba(255,255,255,0.1); color: var(--text3); }
+
+        /* ===== THRESHOLD CONTROLS ===== */
+        .threshold-controls {
+            padding: 12px 16px;
+            border-top: 1px solid var(--border);
+            background: var(--bg);
+        }
+        .threshold-controls label {
+            font-size: 10px; font-weight: 600; color: var(--text3);
+            text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .threshold-row {
+            display: flex; align-items: center; gap: 8px; margin-top: 4px; margin-bottom: 8px;
+        }
+        .threshold-row input[type="range"] { flex: 1; accent-color: var(--accent); }
+        .threshold-row .tv { font-size: 12px; font-weight: 700; color: var(--accent); min-width: 32px; text-align: right; }
+
+        /* ===== LOADING ===== */
+        .loading-overlay {
+            position: fixed; inset: 0; z-index: 1000;
+            background: rgba(6,8,15,0.9);
+            display: none; align-items: center; justify-content: center;
+            flex-direction: column; gap: 16px;
+        }
+        .loading-overlay.active { display: flex; }
+        .spinner {
+            width: 40px; height: 40px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+    <!-- ===== UPLOAD SCREEN ===== -->
+    <div id="screen-upload" class="screen active">
+        <div class="upload-title">🛣️ Road Health <span>Analyzer</span></div>
+        <div class="upload-zone" id="upload-zone">
+            <div class="icon">📁</div>
+            <p><b>Drop your ride CSV here</b></p>
+            <p>or click to browse</p>
+            <input type="file" id="file-input" accept=".csv">
+        </div>
+        <p style="font-size:12px; color:var(--text3); max-width:400px; text-align:center; line-height:1.6;">
+            Upload the CSV exported from the Road Health riding app.
+            Anomalies will be auto-detected using accelerometer + gyroscope data
+            and plotted on a map for you to review.
+        </p>
+    </div>
+
+    <!-- ===== ANALYSIS SCREEN ===== -->
+    <div id="screen-analysis" class="screen">
+        <div class="top-bar">
+            <div class="ride-info" id="ride-info">Loading...</div>
+            <div class="controls">
+                <button class="btn btn-secondary" id="btn-rerun">🔄 Re-detect</button>
+                <button class="btn btn-primary" id="btn-export">📥 Export Labeled CSV</button>
+            </div>
+        </div>
+        <div class="main-area">
+            <div class="map-waveform">
+                <div style="position: relative; flex: 1; display: flex; flex-direction: column;">
+                    <div id="map" style="flex: 1; z-index: 1;"></div>
+                    <div style="position: absolute; top: 10px; right: 10px; z-index: 400; background: rgba(13,17,23,0.9); padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); font-size: 11px;">
+                        <div id="road-health-legend" style="font-weight: 700; margin-bottom: 4px; color: var(--text2);">ROAD HEALTH (20m)</div>
+                        <div style="display:flex; align-items:center; gap:6px;"><div style="width:12px;height:4px;background:#22c55e;border-radius:2px;"></div> Smooth</div>
+                        <div style="display:flex; align-items:center; gap:6px; margin-top:2px;"><div style="width:12px;height:4px;background:#eab308;border-radius:2px;"></div> Degraded</div>
+                        <div style="display:flex; align-items:center; gap:6px; margin-top:2px;"><div style="width:12px;height:4px;background:#ef4444;border-radius:2px;"></div> Terrible</div>
+                    </div>
+                </div>
+                <div class="waveform-panel">
+                    <canvas id="waveform-canvas"></canvas>
+                    <div class="wf-label">Filtered Acceleration &amp; Gyro Pitch</div>
+                    <div class="wf-legend">
+                        <span><div class="dot" style="background:var(--accent)"></div> Accel</span>
+                        <span><div class="dot" style="background:#f97316"></div> Gyro β</span>
+                        <span><div class="dot" style="background:rgba(239,68,68,0.25)"></div> Anomaly</span>
+                    </div>
+                </div>
+            </div>
+            <div class="sidebar">
+                <div class="sidebar-header">
+                    Detected Events <span class="count" id="event-count">0</span>
+                </div>
+                <div class="event-list" id="event-list"></div>
+                <div class="threshold-controls">
+                    <label>Event Detection</label>
+                    <div class="threshold-row">
+                        <span style="font-size:10px;width:30px;">Accel</span>
+                        <input type="range" id="accel-thresh" min="1" max="15" step="0.5" value="8">
+                        <span class="tv" id="accel-thresh-val">8</span>
+                    </div>
+                    <div class="threshold-row">
+                        <span style="font-size:10px;width:30px;">Gyro</span>
+                        <input type="range" id="gyro-thresh" min="10" max="120" step="5" value="80">
+                        <span class="tv" id="gyro-thresh-val">80</span>
+                    </div>
+                    <label style="margin-top:8px;display:block;">Map Settings</label>
+                    <div class="threshold-row">
+                        <span style="font-size:10px;width:30px;">Seg(m)</span>
+                        <input type="range" id="seg-len" min="10" max="100" step="5" value="20">
+                        <span class="tv" id="seg-len-val">20</span>
+                    </div>
+                    <div class="threshold-row">
+                        <span style="font-size:10px;width:30px;">Yellow</span>
+                        <input type="range" id="yel-thresh" min="0.5" max="5.0" step="0.1" value="2.0">
+                        <span class="tv" id="yel-thresh-val">2.0</span>
+                    </div>
+                    <div class="threshold-row">
+                        <span style="font-size:10px;width:30px;">Red</span>
+                        <input type="range" id="red-thresh" min="1.0" max="10.0" step="0.5" value="3.5">
+                        <span class="tv" id="red-thresh-val">3.5</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== LOADING ===== -->
+    <div class="loading-overlay" id="loading">
+        <div class="spinner"></div>
+        <div style="font-size:14px; font-weight:600;">Analyzing ride data...</div>
+    </div>
+
+<script>
+(() => {
+    'use strict';
+
+    /* ========== STATE ========== */
+    let rideData = [];
+    let detectedEvents = [];
+    let roadSegments = [];
+    let map = null;
+    let routeSegments = [];
+    let markers = [];
+    let selectedEventIdx = -1;
+
+    const $ = id => document.getElementById(id);
+    const COLORS = {
+        pothole: '#ef4444',
+        speedbreaker: '#f97316',
+        rough_patch: '#a855f7'
+    };
+    const LABELS = {
+        pothole: '🕳️ Pothole',
+        speedbreaker: '⬆️ Speed Breaker',
+        rough_patch: '🪨 Rough Patch'
+    };
+
+    /* ========== SEGMENTATION ========== */
+    function getDistanceMeters(lat1, lon1, lat2, lon2) {
+        const R = 6371e3; // metres
+        const p1 = lat1 * Math.PI/180;
+        const p2 = lat2 * Math.PI/180;
+        const dp = (lat2-lat1) * Math.PI/180;
+        const dl = (lon2-lon1) * Math.PI/180;
+        const a = Math.sin(dp/2) * Math.sin(dp/2) +
+                  Math.cos(p1) * Math.cos(p2) * Math.sin(dl/2) * Math.sin(dl/2);
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    }
+
+    function calculateSegments(data, targetLength) {
+        const segments = [];
+        let startIdx = 0;
+        for(; startIdx < data.length; startIdx++) {
+            if(data[startIdx].latitude !== 0) break;
+        }
+        if (startIdx >= data.length) return [];
+        
+        let currentSegment = { points: [], accelSumSq: 0, count: 0 };
+        let distAccum = 0;
+        let prevLat = data[startIdx].latitude;
+        let prevLon = data[startIdx].longitude;
+        currentSegment.points.push([prevLat, prevLon]);
+
+        for (let i = startIdx + 1; i < data.length; i++) {
+            const d = data[i];
+            
+            // Add stats regardless of GPS
+            const acc = d._deviation || Math.abs(d.filtered_accel);
+            currentSegment.accelSumSq += acc * acc;
+            currentSegment.count++;
+
+            if (d.latitude !== 0 && d.longitude !== 0) {
+                const dist = getDistanceMeters(prevLat, prevLon, d.latitude, d.longitude);
+                distAccum += dist;
+                prevLat = d.latitude;
+                prevLon = d.longitude;
+                currentSegment.points.push([prevLat, prevLon]);
+            }
+            
+            // Close segment every targetLength meters
+            if (distAccum >= targetLength) {
+                if (currentSegment.count > 0 && currentSegment.points.length > 1) {
+                    currentSegment.rms = Math.sqrt(currentSegment.accelSumSq / currentSegment.count);
+                    segments.push(currentSegment);
+                }
+                currentSegment = { points: [[prevLat, prevLon]], accelSumSq: 0, count: 0 };
+                distAccum = 0;
+            }
+        }
+        if (currentSegment.count > 0 && currentSegment.points.length > 1) {
+            currentSegment.rms = Math.sqrt(currentSegment.accelSumSq / currentSegment.count);
+            segments.push(currentSegment);
+        }
+        return segments;
+    }
+
+    function getSegmentColor(rms, yThresh, rThresh) {
+        if (rms < yThresh) return '#22c55e'; // Green - Smooth
+        if (rms < rThresh) return '#eab308'; // Yellow - Degraded
+        return '#ef4444'; // Red - Terrible
+    }
+
+    /* ========== CSV PARSER ========== */
+    function parseCSV(text) {
+        const lines = text.trim().split('\n');
+        const headers = lines[0].split(',').map(h => h.trim());
+        const data = [];
+        for (let i = 1; i < lines.length; i++) {
+            const values = lines[i].split(',');
+            if (values.length < headers.length) continue;
+            const row = {};
+            headers.forEach((h, j) => row[h] = values[j]?.trim() || '');
+            // Parse numeric fields
+            row.time_s = parseFloat(row.time_s) || 0;
+            row.filtered_accel = parseFloat(row.filtered_accel) || parseFloat(row.abs_accel) || 0;
+            row.abs_accel = parseFloat(row.abs_accel) || 0;
+            row.gyro_beta = parseFloat(row.gyro_beta) || 0;
+            row.gyro_alpha = parseFloat(row.gyro_alpha) || 0;
+            row.gyro_gamma = parseFloat(row.gyro_gamma) || 0;
+            row.speed_kmh = parseFloat(row.speed_kmh) || 0;
+            row.speed_delta = parseFloat(row.speed_delta) || 0;
+            row.latitude = parseFloat(row.latitude) || 0;
+            row.longitude = parseFloat(row.longitude) || 0;
+            row._idx = i - 1;
+            data.push(row);
+        }
+        return data;
+    }
+
+    /* ========== ANOMALY DETECTION ========== */
+    function detectAnomalies(data, accelThresh, gyroThresh) {
+        const WINDOW = 180; // ~3 seconds at 60Hz
+        const MERGE_GAP_S = 1.0; // merge events within 1 second
+
+        // Step 1: Calculate local mean for filtered_accel
+        const localMeans = new Float64Array(data.length);
+        let runSum = 0;
+        const halfW = Math.floor(WINDOW / 2);
+
+        // Sliding window mean
+        for (let i = 0; i < Math.min(halfW, data.length); i++) runSum += data[i].filtered_accel;
+        for (let i = 0; i < data.length; i++) {
+            const right = i + halfW;
+            const left = i - halfW - 1;
+            if (right < data.length) runSum += data[right].filtered_accel;
+            if (left >= 0) runSum -= data[left].filtered_accel;
+            const wStart = Math.max(0, i - halfW);
+            const wEnd = Math.min(data.length - 1, i + halfW);
+            localMeans[i] = runSum / (wEnd - wStart + 1);
+        }
+
+        // Step 2: Calculate deviation and find candidate anomaly points
+        const candidates = [];
+        for (let i = 0; i < data.length; i++) {
+            data[i]._deviation = Math.abs(data[i].filtered_accel - localMeans[i]);
+            if (data[i]._deviation > accelThresh) {
+                candidates.push(i);
+            }
+        }
+
+        // Step 3: Group consecutive candidate indices into regions
+        const regions = [];
+        if (candidates.length === 0) return [];
+
+        let regionStart = candidates[0];
+        let regionEnd = candidates[0];
+        for (let k = 1; k < candidates.length; k++) {
+            const gap = data[candidates[k]].time_s - data[candidates[k - 1]].time_s;
+            if (gap < MERGE_GAP_S) {
+                regionEnd = candidates[k];
+            } else {
+                regions.push([regionStart, regionEnd]);
+                regionStart = candidates[k];
+                regionEnd = candidates[k];
+            }
+        }
+        regions.push([regionStart, regionEnd]);
+
+        // Step 4: For each region, compute stats and filter by gyro
+        const events = [];
+        for (const [rStart, rEnd] of regions) {
+            // Expand window slightly for gyro check
+            const gStart = Math.max(0, rStart - 30);
+            const gEnd = Math.min(data.length - 1, rEnd + 30);
+
+            let maxGyro = 0, maxAccelDev = 0, peakIdx = rStart;
+            let gyroSum = 0, gyroCount = 0;
+
+            for (let i = gStart; i <= gEnd; i++) {
+                const g = Math.abs(data[i].gyro_beta);
+                gyroSum += g;
+                gyroCount++;
+                if (g > maxGyro) maxGyro = g;
+            }
+            for (let i = rStart; i <= rEnd; i++) {
+                if (data[i]._deviation > maxAccelDev) {
+                    maxAccelDev = data[i]._deviation;
+                    peakIdx = i;
+                }
+            }
+
+            const gyroRMS = gyroSum / gyroCount;
+
+            // FILTER: Only keep events where gyro shows real road impact
+            if (maxGyro < gyroThresh && gyroRMS < gyroThresh * 0.5) continue;
+
+            const duration = data[rEnd].time_s - data[rStart].time_s;
+
+            // Find avg speed_delta over this event to detect acceleration
+            let speedDeltaSum = 0, speedDeltaCount = 0;
+            for (let i = rStart; i <= rEnd; i++) {
+                speedDeltaSum += data[i].speed_delta;
+                speedDeltaCount++;
+            }
+            const avgSpeedDelta = speedDeltaCount > 0 ? speedDeltaSum / speedDeltaCount : 0;
+
+            // Find GPS coords (use nearest row with valid GPS)
+            let lat = 0, lon = 0;
+            for (let i = peakIdx; i >= Math.max(0, peakIdx - 60); i--) {
+                if (data[i].latitude !== 0 && data[i].longitude !== 0) {
+                    lat = data[i].latitude;
+                    lon = data[i].longitude;
+                    break;
+                }
+            }
+
+            const type = classifyEvent(duration, maxAccelDev, maxGyro, avgSpeedDelta);
+
+            events.push({
+                startIdx: rStart,
+                endIdx: rEnd,
+                peakIdx: peakIdx,
+                startTime: data[rStart].time_s,
+                endTime: data[rEnd].time_s,
+                duration: duration,
+                peakAccel: maxAccelDev,
+                peakGyro: maxGyro,
+                gyroRMS: gyroRMS,
+                lat: lat,
+                lon: lon,
+                speed: data[peakIdx].speed_kmh,
+                type: type,
+                dismissed: type === 'false_alarm'
+            });
+        }
+
+        return events;
+    }
+
+    function classifyEvent(duration, peakAccel, peakGyro, speedDelta) {
+        // If speed increases significantly, it's almost certainly acceleration (false alarm)
+        if (speedDelta > 1.5) {
+            return 'false_alarm';
+        }
+        // Data shows speed breakers peak around 130° gyro, potholes hit 200°+
+        if (peakGyro < 160) {
+            return 'speedbreaker';
+        }
+        // For high gyro impacts: differentiate by duration
+        if (duration > 1.5) {
+            return 'rough_patch';
+        }
+        return 'pothole';
+    }
+
+    function initMap() {
+        map = L.map('map', {
+            zoomControl: true,
+            attributionControl: false
+        }).setView([17.385, 78.486], 13);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19
+        }).addTo(map);
+
+        // Allow manual labeling by clicking on the map
+        map.on('click', (e) => {
+            if (rideData.length === 0) return;
+            
+            const clickLat = e.latlng.lat;
+            const clickLon = e.latlng.lng;
+
+            // 1. Find nearest GPS point in rideData
+            let nearestIdx = -1;
+            let minDist = Infinity;
+            
+            for (let i = 0; i < rideData.length; i++) {
+                if (rideData[i].latitude !== 0 && rideData[i].longitude !== 0) {
+                    const dLat = rideData[i].latitude - clickLat;
+                    const dLon = rideData[i].longitude - clickLon;
+                    // Simple Euclidean dist (good enough for small distances)
+                    const dist = dLat*dLat + dLon*dLon; 
+                    if (dist < minDist) {
+                        minDist = dist;
+                        nearestIdx = i;
+                    }
+                }
+            }
+
+            // Only snap if reasonably close (roughly ~50 meters depending on latitude)
+            if (minDist > 0.00001) return;
+
+            // 2. Scan ±120 frames (~2 seconds) around nearest point to find the local peak impact
+            const searchStart = Math.max(0, nearestIdx - 120);
+            const searchEnd = Math.min(rideData.length - 1, nearestIdx + 120);
+            
+            let peakIdx = nearestIdx;
+            let maxAccel = 0;
+            
+            for (let i = searchStart; i <= searchEnd; i++) {
+                // Use raw magnitude if deviation isn't available, otherwise use _deviation
+                const val = rideData[i]._deviation || Math.abs(rideData[i].filtered_accel);
+                if (val > maxAccel) {
+                    maxAccel = val;
+                    peakIdx = i;
+                }
+            }
+
+            // 3. Define the event boundaries (±30 frames around peak)
+            const evStart = Math.max(0, peakIdx - 30);
+            const evEnd = Math.min(rideData.length - 1, peakIdx + 30);
+
+            // 4. Calculate stats
+            let maxGyro = 0;
+            let gyroSum = 0;
+            let speedDeltaSum = 0;
+            
+            for (let i = evStart; i <= evEnd; i++) {
+                const g = Math.abs(rideData[i].gyro_beta);
+                if (g > maxGyro) maxGyro = g;
+                gyroSum += g;
+                speedDeltaSum += rideData[i].speed_delta;
+            }
+            
+            const duration = rideData[evEnd].time_s - rideData[evStart].time_s;
+            const avgSpeedDelta = speedDeltaSum / (evEnd - evStart + 1);
+            
+            // Check if there is already an event here
+            const existingIdx = detectedEvents.findIndex(ev => !ev.dismissed && ev.peakIdx === peakIdx);
+            if (existingIdx !== -1) {
+                selectEvent(existingIdx);
+                return; // Don't add duplicate
+            }
+
+            // 5. Create event
+            const newEvent = {
+                startIdx: evStart,
+                endIdx: evEnd,
+                peakIdx: peakIdx,
+                startTime: rideData[evStart].time_s,
+                endTime: rideData[evEnd].time_s,
+                duration: duration,
+                peakAccel: maxAccel,
+                peakGyro: maxGyro,
+                gyroRMS: gyroSum / (evEnd - evStart + 1),
+                lat: rideData[peakIdx].latitude || rideData[nearestIdx].latitude,
+                lon: rideData[peakIdx].longitude || rideData[nearestIdx].longitude,
+                speed: rideData[peakIdx].speed_kmh,
+                type: classifyEvent(duration, maxAccel, maxGyro, avgSpeedDelta),
+                dismissed: false,
+                isManual: true
+            };
+            
+            // If it classified as false alarm because of speed delta, override it 
+            // since the user explicitly clicked to add it
+            if (newEvent.type === 'false_alarm') {
+                newEvent.type = maxGyro > 160 ? 'pothole' : 'speedbreaker';
+                newEvent.dismissed = false;
+            }
+
+            detectedEvents.push(newEvent);
+            
+            // Re-render and select the new event
+            renderMap();
+            renderWaveform();
+            selectEvent(detectedEvents.length - 1);
+            
+            // Scroll sidebar to bottom
+            setTimeout(() => {
+                const list = document.getElementById('event-list');
+                list.scrollTop = list.scrollHeight;
+            }, 100);
+        });
+    }
+
+    function renderMap() {
+        // Clear old markers and route segments
+        markers.forEach(m => map.removeLayer(m));
+        markers = [];
+        if (routeSegments) routeSegments.forEach(l => map.removeLayer(l));
+        routeSegments = [];
+
+        const yelThresh = parseFloat($('yel-thresh').value);
+        const redThresh = parseFloat($('red-thresh').value);
+
+        // Draw segmented route line based on health
+        if (roadSegments && roadSegments.length > 0) {
+            let allPoints = [];
+            roadSegments.forEach(seg => {
+                if (seg.points.length > 1) {
+                    const line = L.polyline(seg.points, {
+                        color: getSegmentColor(seg.rms, yelThresh, redThresh),
+                        weight: 4,
+                        opacity: 0.9
+                    }).addTo(map);
+                    routeSegments.push(line);
+                    allPoints.push(...seg.points);
+                }
+            });
+            if (allPoints.length > 0) {
+                map.fitBounds(L.polyline(allPoints).getBounds(), { padding: [30, 30] });
+            }
+        }
+
+        // Add event markers with slight offset for overlapping GPS coordinates
+        const coordCounts = {};
+        
+        detectedEvents.forEach((ev, idx) => {
+            if (ev.dismissed || ev.lat === 0) return;
+
+            // Offset identical coordinates so they don't perfectly hide each other
+            const coordKey = `${ev.lat},${ev.lon}`;
+            if (!coordCounts[coordKey]) coordCounts[coordKey] = 0;
+            const offset = coordCounts[coordKey] * 0.00008; // Small offset
+            coordCounts[coordKey]++;
+
+            const color = COLORS[ev.type] || '#eab308';
+            const marker = L.circleMarker([ev.lat + offset, ev.lon + offset], {
+                radius: 8,
+                fillColor: color,
+                fillOpacity: 0.9,
+                color: '#fff',
+                weight: 2
+            }).addTo(map);
+
+            marker.on('click', () => selectEvent(idx));
+            marker.bindTooltip(
+                `${LABELS[ev.type] || ev.type}<br>${ev.startTime.toFixed(1)}s — ${ev.peakAccel.toFixed(1)} m/s²`,
+                { direction: 'top' }
+            );
+            markers.push(marker);
+        });
+    }
+
+    /* ========== WAVEFORM ========== */
+    function renderWaveform() {
+        const canvas = $('waveform-canvas');
+        const container = canvas.parentElement;
+        const dpr = window.devicePixelRatio || 1;
+        const W = container.clientWidth;
+        const H = container.clientHeight;
+        canvas.width = W * dpr;
+        canvas.height = H * dpr;
+        canvas.style.width = W + 'px';
+        canvas.style.height = H + 'px';
+        const ctx = canvas.getContext('2d');
+        ctx.scale(dpr, dpr);
+
+        if (rideData.length === 0) return;
+
+        ctx.fillStyle = '#080b14';
+        ctx.fillRect(0, 0, W, H);
+
+        const tMax = rideData[rideData.length - 1].time_s;
+        const tMin = rideData[0].time_s;
+        const tRange = tMax - tMin || 1;
+
+        // Draw anomaly regions
+        for (const ev of detectedEvents) {
+            if (ev.dismissed) continue;
+            const x1 = ((ev.startTime - tMin) / tRange) * W;
+            const x2 = ((ev.endTime - tMin) / tRange) * W;
+            ctx.fillStyle = (COLORS[ev.type] || '#eab308') + '30';
+            ctx.fillRect(x1, 0, Math.max(x2 - x1, 3), H);
+        }
+
+        // Grid lines
+        ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+        ctx.lineWidth = 1;
+        for (let y = 0.25; y < 1; y += 0.25) {
+            ctx.beginPath();
+            ctx.moveTo(0, y * H);
+            ctx.lineTo(W, y * H);
+            ctx.stroke();
+        }
+
+        // Accel waveform
+        const accelMin = 5, accelMax = 35, accelRange = accelMax - accelMin;
+        ctx.beginPath();
+        ctx.strokeStyle = '#00d4ff';
+        ctx.lineWidth = 1;
+        for (let i = 0; i < rideData.length; i++) {
+            const x = ((rideData[i].time_s - tMin) / tRange) * W;
+            const y = H - ((rideData[i].filtered_accel - accelMin) / accelRange) * H;
+            if (i === 0) ctx.moveTo(x, Math.max(0, Math.min(H, y)));
+            else ctx.lineTo(x, Math.max(0, Math.min(H, y)));
+        }
+        ctx.stroke();
+
+        // Gyro beta waveform (scaled)
+        const gyroMax = 200;
+        ctx.beginPath();
+        ctx.strokeStyle = 'rgba(249,115,22,0.5)';
+        ctx.lineWidth = 1;
+        for (let i = 0; i < rideData.length; i++) {
+            const x = ((rideData[i].time_s - tMin) / tRange) * W;
+            const normalized = (rideData[i].gyro_beta + gyroMax) / (2 * gyroMax);
+            const y = H - normalized * H;
+            if (i === 0) ctx.moveTo(x, Math.max(0, Math.min(H, y)));
+            else ctx.lineTo(x, Math.max(0, Math.min(H, y)));
+        }
+        ctx.stroke();
+
+        // Selected event highlight
+        if (selectedEventIdx >= 0 && selectedEventIdx < detectedEvents.length) {
+            const ev = detectedEvents[selectedEventIdx];
+            const x1 = ((ev.startTime - tMin) / tRange) * W;
+            const x2 = ((ev.endTime - tMin) / tRange) * W;
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x1 - 1, 0, Math.max(x2 - x1 + 2, 5), H);
+        }
+    }
+
+    // Waveform click → jump to event
+    $('waveform-canvas').addEventListener('click', (e) => {
+        if (rideData.length === 0) return;
+        const rect = e.target.getBoundingClientRect();
+        const xRatio = (e.clientX - rect.left) / rect.width;
+        const tMin = rideData[0].time_s;
+        const tMax = rideData[rideData.length - 1].time_s;
+        const clickTime = tMin + xRatio * (tMax - tMin);
+
+        // Find nearest event
+        let nearest = -1, nearestDist = Infinity;
+        detectedEvents.forEach((ev, i) => {
+            if (ev.dismissed) return;
+            const mid = (ev.startTime + ev.endTime) / 2;
+            const dist = Math.abs(mid - clickTime);
+            if (dist < nearestDist && dist < 5) {
+                nearestDist = dist;
+                nearest = i;
+            }
+        });
+        if (nearest >= 0) selectEvent(nearest);
+    });
+
+    /* ========== SIDEBAR / EVENT LIST ========== */
+    function renderEventList() {
+        const list = $('event-list');
+        const activeEvents = detectedEvents.filter(e => !e.dismissed);
+        $('event-count').textContent = activeEvents.length;
+
+        if (activeEvents.length === 0) {
+            list.innerHTML = '<p style="padding:20px; text-align:center; color:var(--text3); font-size:13px;">No anomalies detected.<br>Try lowering the thresholds.</p>';
+            return;
+        }
+
+        list.innerHTML = activeEvents.map((ev, dispIdx) => {
+            const realIdx = detectedEvents.indexOf(ev);
+            const isSelected = realIdx === selectedEventIdx;
+            return `
+            <div class="event-card ${isSelected ? 'selected' : ''}" data-idx="${realIdx}" onclick="window._selectEvent(${realIdx})">
+                <div class="ec-top">
+                    <span class="ec-type ${ev.type}">${LABELS[ev.type] || ev.type}</span>
+                    <span class="ec-time">${ev.startTime.toFixed(1)}s — ${ev.endTime.toFixed(1)}s</span>
+                </div>
+                <div class="ec-details">
+                    <span>⚡ ${ev.peakAccel.toFixed(1)} m/s²</span>
+                    <span>🔄 ${ev.peakGyro.toFixed(0)}°/s</span>
+                    <span>⏱ ${ev.duration.toFixed(1)}s</span>
+                    ${ev.speed ? `<span>🏎 ${ev.speed.toFixed(0)} km/h</span>` : ''}
+                </div>
+                <div class="ec-actions">
+                    <button class="btn-p" onclick="event.stopPropagation(); window._classify(${realIdx},'pothole')">Pothole</button>
+                    <button class="btn-s" onclick="event.stopPropagation(); window._classify(${realIdx},'speedbreaker')">Breaker</button>
+                    <button class="btn-r" onclick="event.stopPropagation(); window._classify(${realIdx},'rough_patch')">Rough</button>
+                    <button class="btn-x" onclick="event.stopPropagation(); window._dismiss(${realIdx})">✕</button>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    function selectEvent(idx) {
+        selectedEventIdx = idx;
+        const ev = detectedEvents[idx];
+
+        // Pan map to event
+        if (ev.lat !== 0 && ev.lon !== 0) {
+            map.setView([ev.lat, ev.lon], 17);
+        }
+
+        renderEventList();
+        renderWaveform();
+    }
+
+    // Global handlers for inline onclick
+    window._selectEvent = selectEvent;
+    window._classify = (idx, type) => {
+        detectedEvents[idx].type = type;
+        renderEventList();
+        renderMap();
+    };
+    window._dismiss = (idx) => {
+        detectedEvents[idx].dismissed = true;
+        if (selectedEventIdx === idx) {
+            selectedEventIdx = -1;
+        }
+        renderEventList();
+        renderMap();
+        renderWaveform();
+    };
+
+    /* ========== EXPORT ========== */
+    function exportLabeledCSV() {
+        // Apply labels back to ride data
+        for (const ev of detectedEvents) {
+            if (ev.dismissed) continue;
+            for (let i = ev.startIdx; i <= ev.endIdx && i < rideData.length; i++) {
+                rideData[i].label = ev.type;
+            }
+        }
+
+        const headers = ['timestamp', 'time_s', 'accel_x', 'accel_y', 'accel_z', 'abs_accel',
+            'filtered_accel', 'gyro_alpha', 'gyro_beta', 'gyro_gamma',
+            'latitude', 'longitude', 'speed_kmh', 'speed_delta', 'label'];
+
+        const rows = rideData.map(r => {
+            return headers.map(h => {
+                if (h === 'label') return r.label || '';
+                return r[h] ?? '';
+            }).join(',');
+        });
+
+        const csv = headers.join(',') + '\n' + rows.join('\n');
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `road_health_labeled_${new Date().toISOString().slice(0,10)}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    /* ========== RUN ANALYSIS ========== */
+    function runAnalysis() {
+        const accelThresh = parseFloat($('accel-thresh').value);
+        const gyroThresh = parseFloat($('gyro-thresh').value);
+        const segLen = parseFloat($('seg-len').value);
+
+        // Preserve manually added events across re-detections
+        const manualEvents = detectedEvents.filter(ev => ev.isManual && !ev.dismissed);
+
+        detectedEvents = detectAnomalies(rideData, accelThresh, gyroThresh);
+        detectedEvents.push(...manualEvents);
+        
+        // Compute road segments for continuous health map
+        roadSegments = calculateSegments(rideData, segLen);
+
+        selectedEventIdx = -1;
+
+        // Update ride info
+        const duration = rideData[rideData.length - 1].time_s;
+        const totalEvents = detectedEvents.filter(e => !e.dismissed).length;
+        const potholes = detectedEvents.filter(e => e.type === 'pothole' && !e.dismissed).length;
+        const breakers = detectedEvents.filter(e => e.type === 'speedbreaker' && !e.dismissed).length;
+        const rough = detectedEvents.filter(e => e.type === 'rough_patch' && !e.dismissed).length;
+
+        $('ride-info').innerHTML = `
+            <b>${Math.floor(duration / 60)}m ${Math.floor(duration % 60)}s</b> ride &nbsp;|&nbsp;
+            <b>${rideData.length.toLocaleString()}</b> data points &nbsp;|&nbsp;
+            <span style="color:var(--pothole)">● ${potholes} potholes</span> &nbsp;
+            <span style="color:var(--breaker)">● ${breakers} breakers</span> &nbsp;
+            <span style="color:var(--rough)">● ${rough} rough</span>
+        `;
+
+        renderMap();
+        renderWaveform();
+        renderEventList();
+    }
+
+    /* ========== FILE UPLOAD ========== */
+    function handleFile(file) {
+        $('loading').classList.add('active');
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            rideData = parseCSV(e.target.result);
+
+            // Clear old labels
+            rideData.forEach(r => r.label = '');
+
+            // Switch to analysis screen
+            $('screen-upload').classList.remove('active');
+            $('screen-analysis').classList.add('active');
+
+            // Init map if needed
+            if (!map) initMap();
+            setTimeout(() => {
+                map.invalidateSize();
+                runAnalysis();
+                $('loading').classList.remove('active');
+            }, 300);
+        };
+        reader.readAsText(file);
+    }
+
+    // Upload zone events
+    const zone = $('upload-zone');
+    const fileInput = $('file-input');
+
+    zone.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files[0]) handleFile(e.target.files[0]);
+    });
+    zone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        zone.classList.add('dragover');
+    });
+    zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+    zone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        zone.classList.remove('dragover');
+        if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+    });
+
+    // Threshold controls
+    $('accel-thresh').addEventListener('input', (e) => {
+        $('accel-thresh-val').textContent = e.target.value;
+    });
+    $('gyro-thresh').addEventListener('input', (e) => {
+        $('gyro-thresh-val').textContent = e.target.value;
+    });
+    $('seg-len').addEventListener('input', (e) => {
+        $('seg-len-val').textContent = e.target.value;
+        $('road-health-legend').textContent = `ROAD HEALTH (${e.target.value}m)`;
+    });
+    $('yel-thresh').addEventListener('input', (e) => {
+        $('yel-thresh-val').textContent = e.target.value;
+    });
+    $('red-thresh').addEventListener('input', (e) => {
+        $('red-thresh-val').textContent = e.target.value;
+    });
+
+    // Re-detect button
+    $('btn-rerun').addEventListener('click', runAnalysis);
+
+    // Export button
+    $('btn-export').addEventListener('click', exportLabeledCSV);
+
+    // Resize handler
+    window.addEventListener('resize', () => {
+        if (map) map.invalidateSize();
+        renderWaveform();
+    });
+
+})();
+</script>
+</body>
+</html>

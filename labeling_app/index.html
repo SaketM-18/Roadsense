@@ -1,0 +1,1831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Road Health — Event Labeler</title>
+    <meta name="description" content="Real-time road condition labeling app for motorcycle accelerometer data collection.">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        /* ========== DESIGN SYSTEM ========== */
+        :root {
+            --bg-primary: #06080f;
+            --bg-secondary: #0d1117;
+            --bg-card: rgba(255, 255, 255, 0.04);
+            --bg-card-hover: rgba(255, 255, 255, 0.08);
+            --border: rgba(255, 255, 255, 0.08);
+            --text-primary: #f0f6fc;
+            --text-secondary: rgba(240, 246, 252, 0.5);
+            --text-muted: rgba(240, 246, 252, 0.3);
+            --accent: #00d4ff;
+            --accent-glow: rgba(0, 212, 255, 0.15);
+            --clr-acceleration: #22c55e;
+            --clr-braking: #eab308;
+            --clr-pothole: #ef4444;
+            --clr-speedbreaker: #f97316;
+            --clr-rough: #a855f7;
+            --clr-dismiss: rgba(255, 255, 255, 0.12);
+            --radius: 16px;
+            --radius-sm: 12px;
+            --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        /* ========== RESET ========== */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body {
+            height: 100%; width: 100%;
+            font-family: var(--font);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* ========== SCREENS ========== */
+        .screen {
+            display: none;
+            flex-direction: column;
+            height: 100dvh;
+            width: 100%;
+            padding: 20px;
+            position: relative;
+        }
+        .screen.active { display: flex; }
+
+        /* ========== START SCREEN ========== */
+        #screen-start {
+            align-items: center;
+            justify-content: flex-start;
+            gap: 24px;
+            padding-top: 40px;
+            padding-bottom: 40px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            background: radial-gradient(ellipse at 50% 0%, rgba(0,212,255,0.08) 0%, transparent 60%),
+                        var(--bg-primary);
+        }
+        .app-logo {
+            width: 80px; height: 80px;
+            border-radius: 24px;
+            background: linear-gradient(135deg, var(--accent), #0066ff);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 36px;
+            box-shadow: 0 0 40px rgba(0,212,255,0.2);
+        }
+        .app-title {
+            text-align: center;
+        }
+        .app-title h1 {
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #fff, var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .app-title p {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-top: 6px;
+        }
+
+        .settings-card {
+            width: 100%;
+            max-width: 360px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+        }
+        .settings-card label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .sensitivity-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 10px;
+        }
+        .sensitivity-row input[type="range"] {
+            flex: 1;
+            accent-color: var(--accent);
+            height: 6px;
+        }
+        .sensitivity-value {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--accent);
+            min-width: 48px;
+            text-align: right;
+        }
+
+        .btn-start {
+            width: 100%;
+            max-width: 360px;
+            padding: 20px;
+            font-size: 20px;
+            font-weight: 800;
+            font-family: var(--font);
+            border: none;
+            border-radius: var(--radius);
+            background: linear-gradient(135deg, var(--accent), #0088cc);
+            color: #fff;
+            cursor: pointer;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            box-shadow: 0 4px 24px rgba(0,212,255,0.3);
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+        .btn-start:active {
+            transform: scale(0.97);
+            box-shadow: 0 2px 12px rgba(0,212,255,0.2);
+        }
+
+        .start-info {
+            max-width: 360px;
+            text-align: center;
+            font-size: 12px;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        /* ========== RECORDING SCREEN ========== */
+        #screen-recording {
+            gap: 0;
+            padding: 0;
+            background: var(--bg-primary);
+        }
+
+        .video-container {
+            width: 100%;
+            max-height: 240px;
+            overflow: hidden;
+            position: relative;
+            background: #000;
+            border-bottom: 1px solid var(--border);
+        }
+        #camera-preview {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .recording-badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: rgba(239, 68, 68, 0.85);
+            color: #fff;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 8px;
+            border-radius: 4px;
+            display: none;
+            align-items: center;
+            gap: 4px;
+        }
+        .recording-badge::before {
+            content: '';
+            display: block;
+            width: 6px;
+            height: 6px;
+            background: #fff;
+            border-radius: 50%;
+            animation: pulse 1s infinite;
+        }
+
+        .stats-bar {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 1px;
+            padding: 12px 16px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+        }
+        .stat-item {
+            text-align: center;
+        }
+        .stat-label {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+        }
+        .stat-value {
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--text-primary);
+            margin-top: 2px;
+            font-variant-numeric: tabular-nums;
+        }
+        .stat-value.speed { color: var(--accent); }
+        .stat-value.events { color: var(--clr-speedbreaker); }
+
+        .waveform-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+        #waveform {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        .waveform-label {
+            position: absolute;
+            top: 8px;
+            left: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            pointer-events: none;
+        }
+        .live-indicator {
+            position: absolute;
+            top: 8px;
+            right: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--clr-pothole);
+            text-transform: uppercase;
+        }
+        .live-dot {
+            width: 8px; height: 8px;
+            background: var(--clr-pothole);
+            border-radius: 50%;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.8); }
+        }
+
+        .recording-footer {
+            padding: 16px;
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border);
+        }
+        .btn-stop {
+            width: 100%;
+            padding: 16px;
+            font-size: 16px;
+            font-weight: 700;
+            font-family: var(--font);
+            border: 2px solid var(--clr-pothole);
+            border-radius: var(--radius-sm);
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--clr-pothole);
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: background 0.15s;
+        }
+        .btn-stop:active { background: rgba(239, 68, 68, 0.25); }
+
+        /* ========== LABEL MODAL ========== */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 16px;
+            animation: fadeIn 0.2s ease;
+        }
+        .modal-overlay.active { display: flex; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        .modal-content {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 20px;
+            animation: slideUp 0.25s ease;
+        }
+        .modal-header {
+            text-align: center;
+            margin-bottom: 16px;
+        }
+        .modal-header h2 {
+            font-size: 20px;
+            font-weight: 800;
+        }
+        .modal-header .modal-subtitle {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .label-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .label-btn {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            width: 100%;
+            padding: 18px 20px;
+            font-size: 17px;
+            font-weight: 700;
+            font-family: var(--font);
+            border: none;
+            border-radius: var(--radius-sm);
+            color: #fff;
+            cursor: pointer;
+            transition: transform 0.1s, filter 0.1s;
+            text-align: left;
+        }
+        .label-btn:active {
+            transform: scale(0.96);
+            filter: brightness(0.85);
+        }
+        .label-btn .btn-icon { font-size: 24px; }
+
+        .label-btn.acceleration { background: var(--clr-acceleration); }
+        .label-btn.braking { background: var(--clr-braking); color: #1a1a1a; }
+        .label-btn.pothole { background: var(--clr-pothole); }
+        .label-btn.speedbreaker { background: var(--clr-speedbreaker); }
+        .label-btn.rough { background: var(--clr-rough); }
+
+        .btn-dismiss {
+            width: 100%;
+            padding: 14px;
+            margin-top: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            font-family: var(--font);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--clr-dismiss);
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+
+        .countdown-bar {
+            width: 100%;
+            height: 4px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 2px;
+            margin-top: 14px;
+            overflow: hidden;
+        }
+        .countdown-fill {
+            height: 100%;
+            background: var(--accent);
+            border-radius: 2px;
+            transition: width 0.1s linear;
+        }
+
+        /* ========== SUMMARY SCREEN ========== */
+        #screen-summary {
+            align-items: center;
+            gap: 20px;
+            padding-top: 40px;
+            overflow-y: auto;
+            background: radial-gradient(ellipse at 50% 0%, rgba(0,212,255,0.06) 0%, transparent 50%),
+                        var(--bg-primary);
+        }
+        .summary-title {
+            font-size: 24px;
+            font-weight: 800;
+        }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            width: 100%;
+            max-width: 400px;
+        }
+        .summary-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 16px;
+            text-align: center;
+        }
+        .summary-card .sc-value {
+            font-size: 28px;
+            font-weight: 800;
+        }
+        .summary-card .sc-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 4px;
+        }
+        .summary-card.full-width { grid-column: 1 / -1; }
+
+        .event-breakdown {
+            width: 100%;
+            max-width: 400px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+        }
+        .event-breakdown .eb-title {
+            padding: 14px 16px;
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border);
+        }
+        .eb-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+        }
+        .eb-row:last-child { border-bottom: none; }
+        .eb-row .eb-dot {
+            width: 10px; height: 10px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        .eb-row .eb-name {
+            flex: 1;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .eb-row .eb-count {
+            font-size: 18px;
+            font-weight: 800;
+        }
+
+        .export-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 100%;
+            max-width: 400px;
+        }
+        .btn-export {
+            width: 100%;
+            padding: 16px;
+            font-size: 15px;
+            font-weight: 700;
+            font-family: var(--font);
+            border: none;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            letter-spacing: 0.5px;
+            transition: transform 0.1s;
+        }
+        .btn-export:active { transform: scale(0.97); }
+        .btn-export.primary {
+            background: linear-gradient(135deg, var(--accent), #0088cc);
+            color: #fff;
+        }
+        .btn-export.secondary {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+        }
+        .btn-new-ride {
+            width: 100%;
+            max-width: 400px;
+            padding: 14px;
+            font-size: 14px;
+            font-weight: 600;
+            font-family: var(--font);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            margin-bottom: 40px;
+        }
+
+        /* ========== ERROR/STATUS ========== */
+        .status-toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 12px 20px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+            z-index: 200;
+            display: none;
+            animation: fadeIn 0.2s ease;
+        }
+        .status-toast.show { display: block; }
+        .status-toast.error { border-color: var(--clr-pothole); color: var(--clr-pothole); }
+
+        /* ========== DEBUG PANEL ========== */
+        .debug-panel {
+            width: 100%;
+            max-width: 360px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--clr-pothole);
+            border-radius: var(--radius-sm);
+            padding: 12px;
+            font-family: monospace;
+            font-size: 11px;
+            color: #00ff00;
+            margin-top: 20px;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        /* ========== VOICE MODE ========== */
+        .voice-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            max-width: 360px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 14px 16px;
+            margin-top: 8px;
+        }
+        .voice-toggle label {
+            flex: 1;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .voice-toggle .voice-hint {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+        .toggle-switch {
+            position: relative;
+            width: 50px; height: 28px;
+            flex-shrink: 0;
+        }
+        .toggle-switch input {
+            position: absolute;
+            width: 100%; height: 100%;
+            opacity: 0;
+            z-index: 2;
+            cursor: pointer;
+            margin: 0;
+        }
+        .toggle-slider {
+            position: absolute; inset: 0;
+            background: rgba(255,255,255,0.1);
+            border-radius: 28px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .toggle-slider::before {
+            content: '';
+            position: absolute;
+            width: 22px; height: 22px;
+            left: 3px; top: 3px;
+            background: #fff;
+            border-radius: 50%;
+            transition: transform 0.3s;
+        }
+        .toggle-switch input:checked + .toggle-slider {
+            background: var(--clr-acceleration);
+        }
+        .toggle-switch input:checked + .toggle-slider::before {
+            transform: translateX(22px);
+        }
+
+        .mic-indicator {
+            position: absolute;
+            bottom: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: none;
+            align-items: center;
+            gap: 8px;
+            background: rgba(34, 197, 94, 0.15);
+            border: 1px solid var(--clr-acceleration);
+            border-radius: 30px;
+            padding: 8px 16px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--clr-acceleration);
+            z-index: 50;
+        }
+        .mic-indicator.active { display: flex; }
+        .mic-indicator .mic-dot {
+            width: 8px; height: 8px;
+            background: var(--clr-acceleration);
+            border-radius: 50%;
+            animation: pulse 1s ease-in-out infinite;
+        }
+        .voice-heard {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.85);
+            border-radius: 20px;
+            padding: 24px 40px;
+            font-size: 22px;
+            font-weight: 800;
+            color: #fff;
+            z-index: 300;
+            display: none;
+            animation: fadeIn 0.15s ease;
+            text-align: center;
+        }
+        .voice-heard.show { display: block; }
+
+        /* ========== CAMERA SELECTOR ========== */
+        .camera-card {
+            width: 100%;
+            max-width: 360px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+        }
+        .camera-card label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .camera-card select {
+            width: 100%;
+            margin-top: 10px;
+            padding: 12px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            font-family: var(--font);
+            font-weight: 500;
+            appearance: none;
+            -webkit-appearance: none;
+            cursor: pointer;
+        }
+        .camera-card select:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+        .camera-card .cam-hint {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 8px;
+            line-height: 1.5;
+        }
+        .camera-card .cam-status {
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 8px;
+            padding: 6px 10px;
+            border-radius: 6px;
+        }
+        .cam-status.found {
+            color: var(--clr-acceleration);
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.2);
+        }
+        .cam-status.not-found {
+            color: var(--clr-pothole);
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+        .btn-refresh-cam {
+            margin-top: 10px;
+            padding: 8px 14px;
+            font-size: 12px;
+            font-weight: 600;
+            font-family: var(--font);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-card-hover);
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-refresh-cam:active {
+            background: var(--accent-glow);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ========== START SCREEN ========== -->
+    <div id="screen-start" class="screen active">
+        <div class="app-logo">🛣️</div>
+        <div class="app-title">
+            <h1>Road Health</h1>
+            <p>Real-Time Event Labeler</p>
+        </div>
+
+        <div class="settings-card">
+            <label>Spike Detection Sensitivity</label>
+            <div class="sensitivity-row">
+                <span style="font-size: 12px; color: var(--text-muted);">Low</span>
+                <input type="range" id="threshold-slider" min="1" max="10" step="0.5" value="4">
+                <span style="font-size: 12px; color: var(--text-muted);">High</span>
+            </div>
+            <div style="text-align: center; margin-top: 6px;">
+                <span class="sensitivity-value" id="threshold-display">4.0</span>
+                <span style="font-size: 11px; color: var(--text-muted);"> m/s² threshold</span>
+            </div>
+        </div>
+
+        <div class="camera-card">
+            <label>📷 Video Recording</label>
+            <select id="camera-select">
+                <option value="">Loading cameras...</option>
+            </select>
+            <div class="cam-hint">Select your phone's rear camera to record road video while riding.</div>
+            <div id="cam-status" class="cam-status not-found">Detecting cameras...</div>
+            <button class="btn-refresh-cam" id="btn-refresh-cam">🔄 Refresh Cameras</button>
+        </div>
+
+        <div class="voice-toggle">
+            <div>
+                <label>🎤 Voice Labeling</label>
+                <div class="voice-hint">Say "pothole", "breaker", "rough", "speed" or "brake" anytime</div>
+            </div>
+            <div class="toggle-switch">
+                <input type="checkbox" id="voice-toggle">
+                <div class="toggle-slider"></div>
+            </div>
+        </div>
+
+        <div class="voice-toggle">
+            <div>
+                <label>📣 Popup Alerts</label>
+                <div class="voice-hint">Show label buttons when a spike is detected</div>
+            </div>
+            <div class="toggle-switch">
+                <input type="checkbox" id="popup-toggle">
+                <div class="toggle-slider"></div>
+            </div>
+        </div>
+
+        <button class="btn-start" id="btn-start">🏍️ Start Ride</button>
+
+        <p class="start-info">
+            Mount your phone securely on your bike. The app will record accelerometer, 
+            gyroscope &amp; GPS data. Say the event name or tap the popup to label.
+        </p>
+
+        <div class="debug-panel" id="debug-panel">Waiting for sensors...</div>
+    </div>
+
+    <!-- ========== RECORDING SCREEN ========== -->
+    <div id="screen-recording" class="screen">
+        <div class="video-container">
+            <video id="camera-preview" autoplay muted playsinline></video>
+            <div class="recording-badge" id="recording-badge">REC</div>
+        </div>
+
+        <div class="stats-bar">
+            <div class="stat-item">
+                <div class="stat-label">Duration</div>
+                <div class="stat-value" id="stat-duration">0:00</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Speed</div>
+                <div class="stat-value speed" id="stat-speed">-- <span style="font-size:12px;">km/h</span></div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Events</div>
+                <div class="stat-value events" id="stat-events">0</div>
+            </div>
+        </div>
+
+        <div class="waveform-container">
+            <canvas id="waveform"></canvas>
+            <div class="waveform-label">Absolute Acceleration</div>
+            <div class="live-indicator"><div class="live-dot"></div> LIVE</div>
+        </div>
+
+        <div class="mic-indicator" id="mic-indicator">
+            <div class="mic-dot"></div> 🎤 Voice Listening...
+        </div>
+
+        <div class="recording-footer">
+            <button class="btn-stop" id="btn-stop">⏹ Stop Ride</button>
+        </div>
+    </div>
+
+    <!-- ========== LABEL MODAL ========== -->
+    <div class="modal-overlay" id="modal-label">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>⚡ What was that?</h2>
+                <div class="modal-subtitle" id="modal-accel-info">Peak: -- m/s²</div>
+            </div>
+            <div class="label-buttons">
+                <button class="label-btn acceleration" data-label="acceleration">
+                    <span class="btn-icon">🚀</span> Acceleration
+                </button>
+                <button class="label-btn braking" data-label="braking">
+                    <span class="btn-icon">🛑</span> Braking (Traffic)
+                </button>
+                <button class="label-btn pothole" data-label="pothole">
+                    <span class="btn-icon">🕳️</span> Pothole
+                </button>
+                <button class="label-btn speedbreaker" data-label="speedbreaker">
+                    <span class="btn-icon">⬆️</span> Speed Breaker
+                </button>
+                <button class="label-btn rough" data-label="rough_patch">
+                    <span class="btn-icon">🪨</span> Severe Rough Patch
+                </button>
+            </div>
+            <button class="btn-dismiss" id="btn-dismiss">Dismiss / Ignore</button>
+            <div class="countdown-bar">
+                <div class="countdown-fill" id="countdown-fill" style="width: 100%;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== SUMMARY SCREEN ========== -->
+    <div id="screen-summary" class="screen">
+        <div class="summary-title">🏁 Ride Complete</div>
+
+        <div class="summary-grid">
+            <div class="summary-card">
+                <div class="sc-value" id="sum-duration">0:00</div>
+                <div class="sc-label">Duration</div>
+            </div>
+            <div class="summary-card">
+                <div class="sc-value" id="sum-events">0</div>
+                <div class="sc-label">Events Labeled</div>
+            </div>
+            <div class="summary-card">
+                <div class="sc-value" id="sum-readings">0</div>
+                <div class="sc-label">Data Points</div>
+            </div>
+            <div class="summary-card">
+                <div class="sc-value" id="sum-avg-speed">--</div>
+                <div class="sc-label">Avg Speed (km/h)</div>
+            </div>
+        </div>
+
+        <div class="event-breakdown" id="event-breakdown"></div>
+
+        <div class="export-buttons">
+            <button class="btn-export primary" id="btn-export-full">📥 Export Full Ride CSV</button>
+            <button class="btn-export secondary" id="btn-export-events">📋 Export Events Only CSV</button>
+            <button class="btn-export secondary" id="btn-export-video" style="display:none;">🎥 Export Ride Video</button>
+        </div>
+
+        <button class="btn-new-ride" id="btn-new-ride">Start New Ride</button>
+    </div>
+
+    <!-- ========== STATUS TOAST ========== -->
+    <div class="status-toast" id="status-toast"></div>
+
+    <!-- ========== VOICE HEARD FLASH ========== -->
+    <div class="voice-heard" id="voice-heard"></div>
+
+    <!-- ========== JAVASCRIPT ========== -->
+    <script>
+    (() => {
+        'use strict';
+
+        /* ========== CONFIGURATION ========== */
+        const CONFIG = {
+            SPIKE_COOLDOWN_MS: 3000,      // 3 second cooldown between spikes
+            ROLLING_BUFFER_MS: 3000,      // 3 second rolling window for baseline
+            MODAL_TIMEOUT_MS: 10000,      // 10 seconds before auto-dismiss
+            LABEL_WINDOW_S: 1.5,          // Label ±1.5 seconds around spike
+            WAVEFORM_SECONDS: 10,         // Show last 10 seconds on graph
+            GPS_OPTIONS: {
+                enableHighAccuracy: true,
+                maximumAge: 2000,
+                timeout: 5000
+            }
+        };
+
+        /* ========== STATE ========== */
+        const state = {
+            isRecording: false,
+            startTime: null,
+            threshold: 4.0,
+
+            // Latest sensor values
+            accel: { x: 0, y: 0, z: 0, abs: 0 },
+            filteredAccel: 9.81,
+            gyro: { alpha: 0, beta: 0, gamma: 0 },
+            gps: { lat: null, lon: null, speed: null, prevSpeed: null },
+
+            // Data storage
+            readings: [],
+            events: [],
+
+            // Spike detection
+            rollingBuffer: [],
+            lastSpikeTime: 0,
+            pendingSpike: null,
+
+            // Waveform
+            waveformData: [],
+
+            // Modal
+            modalTimer: null,
+            countdownInterval: null,
+
+            // Sensor handles
+            geoWatchId: null,
+            wakeLock: null,
+            animFrameId: null,
+            
+            // Video Recording
+            cameraStream: null,
+            mediaRecorder: null,
+            recordedChunks: [],
+            videoBlob: null
+        };
+
+        /* ========== DOM REFS ========== */
+        const $ = id => document.getElementById(id);
+        const screens = {
+            start: $('screen-start'),
+            recording: $('screen-recording'),
+            summary: $('screen-summary')
+        };
+        const modal = $('modal-label');
+
+        /* ========== UTILITY FUNCTIONS ========== */
+        function formatDuration(ms) {
+            const totalSec = Math.floor(ms / 1000);
+            const min = Math.floor(totalSec / 60);
+            const sec = totalSec % 60;
+            return `${min}:${sec.toString().padStart(2, '0')}`;
+        }
+
+        function showToast(msg, isError = false) {
+            const toast = $('status-toast');
+            toast.textContent = msg;
+            toast.className = 'status-toast show' + (isError ? ' error' : '');
+            setTimeout(() => toast.className = 'status-toast', 3000);
+        }
+
+        function showScreen(name) {
+            Object.values(screens).forEach(s => s.classList.remove('active'));
+            screens[name].classList.add('active');
+        }
+
+        /* ========== SPIKE DETECTOR ========== */
+        function addToRollingBuffer(timestamp, absAccel) {
+            state.rollingBuffer.push({ t: timestamp, v: absAccel });
+            const cutoff = timestamp - CONFIG.ROLLING_BUFFER_MS;
+            while (state.rollingBuffer.length > 0 && state.rollingBuffer[0].t < cutoff) {
+                state.rollingBuffer.shift();
+            }
+        }
+
+        function checkSpike(timestamp, absAccel) {
+            if (timestamp - state.lastSpikeTime < CONFIG.SPIKE_COOLDOWN_MS) return false;
+            if (state.rollingBuffer.length < 20) return false;
+
+            const values = state.rollingBuffer.map(s => s.v);
+            const mean = values.reduce((a, b) => a + b, 0) / values.length;
+            const deviation = Math.abs(absAccel - mean);
+
+            if (deviation > state.threshold) {
+                state.lastSpikeTime = timestamp;
+                return true;
+            }
+            return false;
+        }
+
+        /* ========== SENSOR MANAGEMENT ========== */
+        function onDeviceMotion(event) {
+            if (!state.isRecording) return;
+
+            const now = performance.now();
+            const a = event.accelerationIncludingGravity || {};
+            const r = event.rotationRate || {};
+
+            const ax = a.x || 0;
+            const ay = a.y || 0;
+            const az = a.z || 0;
+            const absAccel = Math.sqrt(ax * ax + ay * ay + az * az);
+
+            // Apply Low-Pass Filter (EMA) to kill engine vibration
+            const ALPHA = 0.15; // 0.15 gives very smooth output but reacts instantly to bumps
+            state.filteredAccel = (ALPHA * absAccel) + ((1 - ALPHA) * state.filteredAccel);
+
+            state.accel = { x: ax, y: ay, z: az, abs: absAccel };
+            state.gyro = {
+                alpha: r.alpha || 0,
+                beta: r.beta || 0,
+                gamma: r.gamma || 0
+            };
+
+            // Debug output
+            state.debugEvents++;
+            if (state.debugEvents % 10 === 0) {
+                $('debug-panel').textContent = `Sensor Active!
+Events: ${state.debugEvents}
+abs (raw): ${absAccel.toFixed(2)}
+abs (filtered): ${state.filteredAccel.toFixed(2)}`;
+            }
+
+            const timeSec = (Date.now() - state.startTime) / 1000;
+
+            // Calculate speed delta
+            let speedDelta = 0;
+            const currentSpeed = state.gps.speed;
+            if (currentSpeed !== null && state.gps.prevSpeed !== null) {
+                speedDelta = currentSpeed - state.gps.prevSpeed;
+            }
+
+            // Store reading
+            const reading = {
+                timestamp: Date.now(),
+                time_s: timeSec.toFixed(3),
+                accel_x: ax.toFixed(4),
+                accel_y: ay.toFixed(4),
+                accel_z: az.toFixed(4),
+                abs_accel: absAccel.toFixed(4),
+                filtered_accel: state.filteredAccel.toFixed(4),
+                gyro_alpha: state.gyro.alpha.toFixed(4),
+                gyro_beta: state.gyro.beta.toFixed(4),
+                gyro_gamma: state.gyro.gamma.toFixed(4),
+                latitude: state.gps.lat !== null ? state.gps.lat.toFixed(7) : '',
+                longitude: state.gps.lon !== null ? state.gps.lon.toFixed(7) : '',
+                speed_kmh: currentSpeed !== null ? currentSpeed.toFixed(1) : '',
+                speed_delta: speedDelta.toFixed(2),
+                label: ''
+            };
+            state.readings.push(reading);
+
+            // Waveform data (use filtered accel for clean graph)
+            state.waveformData.push({ t: timeSec, v: state.filteredAccel });
+            const wfCutoff = timeSec - CONFIG.WAVEFORM_SECONDS;
+            while (state.waveformData.length > 0 && state.waveformData[0].t < wfCutoff) {
+                state.waveformData.shift();
+            }
+
+            // Spike detection (use filtered accel so engine revs don't trigger it)
+            addToRollingBuffer(now, state.filteredAccel);
+            if (!modal.classList.contains('active') && checkSpike(now, state.filteredAccel)) {
+                if ($('popup-toggle').checked) {
+                    triggerSpike(timeSec, state.filteredAccel);
+                }
+            }
+        }
+
+        function onGeoPosition(pos) {
+            state.gps.prevSpeed = state.gps.speed;
+            state.gps.lat = pos.coords.latitude;
+            state.gps.lon = pos.coords.longitude;
+            state.gps.speed = pos.coords.speed !== null ? pos.coords.speed * 3.6 : null;
+        }
+
+        function onGeoError(err) {
+            console.warn('GPS error:', err.message);
+        }
+
+        async function startSensors() {
+            $('debug-panel').textContent = 'Requesting sensors...';
+            state.debugEvents = 0;
+
+            // Request DeviceMotion permission (required on iOS 13+)
+            if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+                try {
+                    const perm = await DeviceMotionEvent.requestPermission();
+                    if (perm !== 'granted') {
+                        const msg = 'Accelerometer permission denied!';
+                        showToast(msg, true);
+                        $('debug-panel').textContent = 'Error: ' + msg;
+                        return false;
+                    }
+                } catch (e) {
+                    const msg = 'Sensor permission error: ' + e.message;
+                    showToast(msg, true);
+                    $('debug-panel').textContent = 'Error: ' + msg;
+                    return false;
+                }
+            } else {
+                $('debug-panel').textContent = 'DeviceMotionEvent.requestPermission not required/supported. Listening...';
+            }
+            
+            // CAMERA REQUEST — Use the camera selected in the dropdown
+            const selectedDeviceId = $('camera-select').value;
+            const videoConstraints = selectedDeviceId 
+                ? { deviceId: { exact: selectedDeviceId }, width: { ideal: 1280 }, height: { ideal: 720 } }
+                : { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } };
+            try {
+                state.cameraStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: videoConstraints,
+                    audio: false
+                });
+                $('camera-preview').srcObject = state.cameraStream;
+            } catch (e) {
+                showToast('Camera not found. ' + e.message, true);
+                $('debug-panel').textContent = 'Camera Error: ' + e.message;
+                return false;
+            }
+
+            window.addEventListener('devicemotion', onDeviceMotion);
+
+            // GPS
+            if ('geolocation' in navigator) {
+                state.geoWatchId = navigator.geolocation.watchPosition(
+                    onGeoPosition, onGeoError, CONFIG.GPS_OPTIONS
+                );
+            } else {
+                showToast('GPS not available on this device');
+            }
+
+            // Wake Lock (keep screen on)
+            try {
+                if ('wakeLock' in navigator) {
+                    state.wakeLock = await navigator.wakeLock.request('screen');
+                }
+            } catch (e) {
+                console.warn('Wake Lock not available');
+            }
+
+            // Voice recognition
+            if ($('voice-toggle').checked) {
+                startVoiceRecognition();
+            }
+
+            return true;
+        }
+
+        function stopSensors() {
+            window.removeEventListener('devicemotion', onDeviceMotion);
+            if (state.geoWatchId !== null) {
+                navigator.geolocation.clearWatch(state.geoWatchId);
+                state.geoWatchId = null;
+            }
+            if (state.wakeLock) {
+                state.wakeLock.release();
+                state.wakeLock = null;
+            }
+            if (state.animFrameId) {
+                cancelAnimationFrame(state.animFrameId);
+                state.animFrameId = null;
+            }
+            stopVoiceRecognition();
+        }
+
+        /* ========== VOICE RECOGNITION ========== */
+        let recognition = null;
+        let lastVoiceLabelTime = 0;
+        const VOICE_COOLDOWN_MS = 1000; // 1 second cooldown — enough to block echo, short enough for back-to-back events
+
+        // IMPORTANT: Longer phrases MUST come first so "speed breaker" matches
+        // before "speed" does. Array of [phrase, label] sorted longest first.
+        const VOICE_KEYWORDS = [
+            ['speed breaker', 'speedbreaker'],
+            ['speedbreaker',  'speedbreaker'],
+            ['rough patch',   'rough_patch'],
+            ['pot hole',      'pothole'],
+            ['acceleration',  'acceleration'],
+            ['accelerate',    'acceleration'],
+            ['pothole',       'pothole'],
+            ['breaker',       'speedbreaker'],
+            ['braking',       'braking'],
+            ['traffic',       'braking'],
+            ['kharab',        'rough_patch'],
+            ['gaddha',        'pothole'],
+            ['gadda',         'pothole'],
+            ['rough',         'rough_patch'],
+            ['brake',         'braking'],
+            ['bump',          'speedbreaker'],
+            ['hump',          'speedbreaker'],
+            ['hole',          'pothole'],
+        ];
+
+        const LABEL_DISPLAY = {
+            'pothole': '🕳️ POTHOLE',
+            'speedbreaker': '⬆️ SPEED BREAKER',
+            'rough_patch': '🪨 ROUGH PATCH',
+            'acceleration': '🚀 ACCELERATION',
+            'braking': '🛑 BRAKING',
+        };
+
+        function handleVoiceLabel(label) {
+            const now = Date.now();
+            if (now - lastVoiceLabelTime < VOICE_COOLDOWN_MS) return; // Cooldown active
+            lastVoiceLabelTime = now;
+
+            if (!state.isRecording) return;
+
+            // If modal is open, just dismiss it with the voice label — don't create a separate event
+            if (modal.classList.contains('active')) {
+                // Show flash
+                const flash = $('voice-heard');
+                flash.textContent = LABEL_DISPLAY[label] || label;
+                flash.className = 'voice-heard show';
+                if ('vibrate' in navigator) navigator.vibrate(100);
+                setTimeout(() => flash.className = 'voice-heard', 1500);
+
+                assignLabel(label); // Uses pendingSpike's timestamp — no duplicate
+                return;
+            }
+
+            // No modal open — create a voice-only event at current time
+            const timeSec = (Date.now() - state.startTime) / 1000;
+
+            const voiceEvent = {
+                timestamp: Date.now(),
+                time_s: timeSec.toFixed(3),
+                label: label,
+                peak_accel: state.filteredAccel.toFixed(4),
+                latitude: state.gps.lat !== null ? state.gps.lat.toFixed(7) : '',
+                longitude: state.gps.lon !== null ? state.gps.lon.toFixed(7) : '',
+                speed_kmh: state.gps.speed !== null ? state.gps.speed.toFixed(1) : ''
+            };
+            state.events.push(voiceEvent);
+
+            // Label the readings window around NOW (±1.5 seconds)
+            const windowStart = timeSec - CONFIG.LABEL_WINDOW_S;
+            const windowEnd = timeSec + CONFIG.LABEL_WINDOW_S;
+            for (let j = state.readings.length - 1; j >= 0; j--) {
+                const t = parseFloat(state.readings[j].time_s);
+                if (t < windowStart) break;
+                if (t >= windowStart && t <= windowEnd && state.readings[j].label === '') {
+                    state.readings[j].label = label;
+                }
+            }
+
+            // Update UI
+            $('stat-events').textContent = state.events.length;
+
+            // Show voice heard flash
+            const flash = $('voice-heard');
+            flash.textContent = LABEL_DISPLAY[label] || label;
+            flash.className = 'voice-heard show';
+            if ('vibrate' in navigator) navigator.vibrate(100);
+            setTimeout(() => flash.className = 'voice-heard', 1500);
+        }
+
+        function startVoiceRecognition() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                showToast('Voice recognition not supported in this browser', true);
+                return;
+            }
+
+            recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = false; // ONLY final results — prevents premature matching
+            recognition.lang = 'en-IN';
+
+            recognition.onstart = () => {
+                $('mic-indicator').classList.add('active');
+            };
+
+            recognition.onresult = (event) => {
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    if (!event.results[i].isFinal) continue; // Extra safety check
+                    
+                    const transcript = event.results[i][0].transcript.toLowerCase().trim();
+                    
+                    // Check keywords — longer phrases are checked first (array order)
+                    for (const [keyword, label] of VOICE_KEYWORDS) {
+                        if (transcript.includes(keyword)) {
+                            handleVoiceLabel(label);
+                            return; // Stop after first match
+                        }
+                    }
+                }
+            };
+
+            recognition.onerror = (event) => {
+                console.warn('Voice error:', event.error);
+                if (event.error === 'not-allowed') {
+                    showToast('Microphone permission denied!', true);
+                    $('mic-indicator').classList.remove('active');
+                    return;
+                }
+            };
+
+            // Auto-restart when it stops (browser kills it after silence)
+            recognition.onend = () => {
+                if (state.isRecording && $('voice-toggle').checked) {
+                    try { recognition.start(); } catch (e) { /* already started */ }
+                } else {
+                    $('mic-indicator').classList.remove('active');
+                }
+            };
+
+            try {
+                recognition.start();
+                showToast('🎤 Voice labeling active!');
+            } catch (e) {
+                showToast('Failed to start voice: ' + e.message, true);
+            }
+        }
+
+        function stopVoiceRecognition() {
+            if (recognition) {
+                try { recognition.stop(); } catch (e) { /* already stopped */ }
+                recognition = null;
+            }
+            $('mic-indicator').classList.remove('active');
+        }
+
+        /* ========== SPIKE HANDLING ========== */
+        function triggerSpike(timeSec, peakAccel) {
+            // Vibrate phone
+            if ('vibrate' in navigator) {
+                navigator.vibrate([100, 50, 100, 50, 100]);
+            }
+
+            state.pendingSpike = {
+                time_s: timeSec,
+                timestamp: Date.now(),
+                peak_accel: peakAccel,
+                lat: state.gps.lat,
+                lon: state.gps.lon,
+                speed_kmh: state.gps.speed
+            };
+
+            // Show modal
+            $('modal-accel-info').textContent = `Peak: ${peakAccel.toFixed(1)} m/s² at ${timeSec.toFixed(1)}s`;
+            modal.classList.add('active');
+
+            // Start countdown
+            let remaining = CONFIG.MODAL_TIMEOUT_MS;
+            const fill = $('countdown-fill');
+            fill.style.width = '100%';
+
+            if (state.countdownInterval) clearInterval(state.countdownInterval);
+            state.countdownInterval = setInterval(() => {
+                remaining -= 100;
+                fill.style.width = Math.max(0, (remaining / CONFIG.MODAL_TIMEOUT_MS) * 100) + '%';
+                if (remaining <= 0) {
+                    clearInterval(state.countdownInterval);
+                    assignLabel('unlabeled');
+                }
+            }, 100);
+        }
+
+        function assignLabel(label) {
+            if (state.countdownInterval) clearInterval(state.countdownInterval);
+            modal.classList.remove('active');
+
+            if (!state.pendingSpike) return;
+
+            const spike = state.pendingSpike;
+            state.pendingSpike = null;
+
+            // Record event
+            state.events.push({
+                timestamp: spike.timestamp,
+                time_s: spike.time_s.toFixed(3),
+                label: label,
+                peak_accel: spike.peak_accel.toFixed(4),
+                latitude: spike.lat !== null ? spike.lat.toFixed(7) : '',
+                longitude: spike.lon !== null ? spike.lon.toFixed(7) : '',
+                speed_kmh: spike.speed_kmh !== null ? spike.speed_kmh.toFixed(1) : ''
+            });
+
+            // Label the readings window around the spike
+            const windowStart = spike.time_s - CONFIG.LABEL_WINDOW_S;
+            const windowEnd = spike.time_s + CONFIG.LABEL_WINDOW_S;
+            for (let i = state.readings.length - 1; i >= 0; i--) {
+                const t = parseFloat(state.readings[i].time_s);
+                if (t < windowStart) break;
+                if (t >= windowStart && t <= windowEnd && state.readings[i].label === '') {
+                    state.readings[i].label = label;
+                }
+            }
+
+            // Update UI
+            $('stat-events').textContent = state.events.length;
+
+            if (label !== 'unlabeled') {
+                showToast(`✓ Labeled: ${label.replace('_', ' ').toUpperCase()}`);
+            }
+        }
+
+        /* ========== WAVEFORM RENDERER ========== */
+        function renderWaveform() {
+            if (!state.isRecording) return;
+
+            const canvas = $('waveform');
+            const ctx = canvas.getContext('2d');
+            const dpr = window.devicePixelRatio || 1;
+
+            // Resize canvas to fill container
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            canvas.style.width = rect.width + 'px';
+            canvas.style.height = rect.height + 'px';
+            ctx.scale(dpr, dpr);
+
+            const W = rect.width;
+            const H = rect.height;
+            const data = state.waveformData;
+
+            // Clear
+            ctx.fillStyle = '#080b14';
+            ctx.fillRect(0, 0, W, H);
+
+            // Y-axis range (absolute acceleration: typically 5-25 m/s²)
+            const yMin = 2;
+            const yMax = 30;
+            const yRange = yMax - yMin;
+
+            // Grid lines
+            ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+            ctx.lineWidth = 1;
+            for (let g = 5; g <= 25; g += 5) {
+                const gy = H - ((g - yMin) / yRange) * H;
+                ctx.beginPath();
+                ctx.moveTo(0, gy);
+                ctx.lineTo(W, gy);
+                ctx.stroke();
+
+                // Label
+                ctx.fillStyle = 'rgba(255,255,255,0.15)';
+                ctx.font = '10px Inter';
+                ctx.fillText(g + '', 4, gy - 3);
+            }
+
+            if (data.length < 2) {
+                state.animFrameId = requestAnimationFrame(renderWaveform);
+                return;
+            }
+
+            // Time range
+            const tEnd = data[data.length - 1].t;
+            const tStart = tEnd - CONFIG.WAVEFORM_SECONDS;
+
+            // Draw waveform
+            ctx.beginPath();
+            ctx.strokeStyle = '#00d4ff';
+            ctx.lineWidth = 1.5;
+            ctx.lineJoin = 'round';
+
+            let started = false;
+            for (const pt of data) {
+                const x = ((pt.t - tStart) / CONFIG.WAVEFORM_SECONDS) * W;
+                const y = H - ((pt.v - yMin) / yRange) * H;
+                const cy = Math.max(0, Math.min(H, y));
+                if (!started) { ctx.moveTo(x, cy); started = true; }
+                else { ctx.lineTo(x, cy); }
+            }
+            ctx.stroke();
+
+            // Draw spike markers
+            ctx.fillStyle = 'rgba(239, 68, 68, 0.3)';
+            for (const ev of state.events) {
+                const evT = parseFloat(ev.time_s);
+                if (evT >= tStart && evT <= tEnd) {
+                    const x = ((evT - tStart) / CONFIG.WAVEFORM_SECONDS) * W;
+                    ctx.fillRect(x - 2, 0, 4, H);
+                }
+            }
+
+            // Threshold line
+            if (state.rollingBuffer.length > 20) {
+                const vals = state.rollingBuffer.map(s => s.v);
+                const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
+                const threshY = H - ((mean + state.threshold - yMin) / yRange) * H;
+                ctx.setLineDash([4, 4]);
+                ctx.strokeStyle = 'rgba(239, 68, 68, 0.3)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(0, threshY);
+                ctx.lineTo(W, threshY);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+
+            state.animFrameId = requestAnimationFrame(renderWaveform);
+        }
+
+        /* ========== STATS UPDATER ========== */
+        let statsInterval;
+        function startStatsUpdater() {
+            statsInterval = setInterval(() => {
+                if (!state.isRecording) return;
+                const elapsed = Date.now() - state.startTime;
+                $('stat-duration').textContent = formatDuration(elapsed);
+
+                const speed = state.gps.speed;
+                $('stat-speed').innerHTML = speed !== null
+                    ? `${speed.toFixed(0)} <span style="font-size:12px;">km/h</span>`
+                    : '-- <span style="font-size:12px;">km/h</span>';
+            }, 500);
+        }
+
+        /* ========== CSV EXPORT ========== */
+        function downloadCSV(filename, csvString) {
+            const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function exportFullCSV() {
+            if (state.readings.length === 0) {
+                showToast('No data to export!', true);
+                return;
+            }
+            const headers = Object.keys(state.readings[0]);
+            const rows = state.readings.map(r => headers.map(h => r[h]).join(','));
+            const csv = headers.join(',') + '\n' + rows.join('\n');
+            const dateStr = new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-');
+            downloadCSV(`road_health_full_${dateStr}.csv`, csv);
+            showToast(`Exported ${state.readings.length} readings!`);
+        }
+
+        function exportEventsCSV() {
+            if (state.events.length === 0) {
+                showToast('No events to export!', true);
+                return;
+            }
+            const headers = Object.keys(state.events[0]);
+            const rows = state.events.map(e => headers.map(h => e[h]).join(','));
+            const csv = headers.join(',') + '\n' + rows.join('\n');
+            const dateStr = new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-');
+            downloadCSV(`road_health_events_${dateStr}.csv`, csv);
+            showToast(`Exported ${state.events.length} events!`);
+        }
+
+        /* ========== SUMMARY ========== */
+        function showSummary() {
+            const elapsed = Date.now() - state.startTime;
+            $('sum-duration').textContent = formatDuration(elapsed);
+            $('sum-events').textContent = state.events.length;
+            $('sum-readings').textContent = state.readings.toLocaleString
+                ? state.readings.length.toLocaleString()
+                : state.readings.length;
+
+            // Average speed
+            const speeds = state.readings
+                .map(r => parseFloat(r.speed_kmh))
+                .filter(s => !isNaN(s) && s > 0);
+            const avgSpeed = speeds.length > 0
+                ? (speeds.reduce((a, b) => a + b, 0) / speeds.length).toFixed(0)
+                : '--';
+            $('sum-avg-speed').textContent = avgSpeed;
+
+            // Event breakdown
+            const breakdown = {};
+            const colorMap = {
+                acceleration: 'var(--clr-acceleration)',
+                braking: 'var(--clr-braking)',
+                pothole: 'var(--clr-pothole)',
+                speedbreaker: 'var(--clr-speedbreaker)',
+                rough_patch: 'var(--clr-rough)',
+                unlabeled: 'var(--text-muted)'
+            };
+            state.events.forEach(e => {
+                breakdown[e.label] = (breakdown[e.label] || 0) + 1;
+            });
+
+            const ebEl = $('event-breakdown');
+            let html = '<div class="eb-title">Event Breakdown</div>';
+            for (const [label, count] of Object.entries(breakdown)) {
+                const color = colorMap[label] || 'var(--text-muted)';
+                const name = label.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase());
+                html += `<div class="eb-row">
+                    <div class="eb-dot" style="background:${color}"></div>
+                    <div class="eb-name">${name}</div>
+                    <div class="eb-count">${count}</div>
+                </div>`;
+            }
+            ebEl.innerHTML = html;
+
+            showScreen('summary');
+        }
+
+        /* ========== APP LIFECYCLE ========== */
+        async function startRide() {
+            const sensorsOk = await startSensors();
+            if (!sensorsOk) return;
+
+            // Reset state
+            state.isRecording = true;
+            state.startTime = Date.now();
+            state.readings = [];
+            state.events = [];
+            state.waveformData = [];
+            state.rollingBuffer = [];
+            state.lastSpikeTime = 0;
+            state.gps = { lat: null, lon: null, speed: null, prevSpeed: null };
+
+            $('stat-duration').textContent = '0:00';
+            $('stat-speed').innerHTML = '-- <span style="font-size:12px;">km/h</span>';
+            $('stat-events').textContent = '0';
+
+            // START VIDEO RECORDING
+            state.recordedChunks = [];
+            try {
+                // Use webm format as it is universally supported by MediaRecorder on Chrome
+                state.mediaRecorder = new MediaRecorder(state.cameraStream, { mimeType: 'video/webm' });
+                state.mediaRecorder.ondataavailable = (e) => {
+                    if (e.data.size > 0) state.recordedChunks.push(e.data);
+                };
+                state.mediaRecorder.start();
+                $('recording-badge').style.display = 'flex';
+            } catch (e) {
+                console.warn('MediaRecorder error:', e);
+            }
+
+            showScreen('recording');
+            startStatsUpdater();
+            renderWaveform();
+
+            showToast('Recording started! Ride safe 🏍️');
+        }
+
+        function stopRide() {
+            if (!confirm('Stop recording and end the ride?')) return;
+
+            state.isRecording = false;
+            stopSensors();
+            clearInterval(statsInterval);
+            
+            // STOP VIDEO RECORDING — store the blob, don't auto-download
+            if (state.mediaRecorder && state.mediaRecorder.state !== 'inactive') {
+                state.mediaRecorder.onstop = () => {
+                    state.videoBlob = new Blob(state.recordedChunks, { type: 'video/webm' });
+                    // Show the export video button on the summary screen
+                    $('btn-export-video').style.display = 'block';
+                };
+                state.mediaRecorder.stop();
+                $('recording-badge').style.display = 'none';
+            }
+            
+            // Stop camera stream to free up resources
+            if (state.cameraStream) {
+                state.cameraStream.getTracks().forEach(t => t.stop());
+                state.cameraStream = null;
+            }
+
+            showSummary();
+        }
+
+        /* ========== EVENT LISTENERS ========== */
+        // Threshold slider
+        $('threshold-slider').addEventListener('input', (e) => {
+            state.threshold = parseFloat(e.target.value);
+            $('threshold-display').textContent = state.threshold.toFixed(1);
+        });
+
+        // Start ride
+        $('btn-start').addEventListener('click', startRide);
+
+        // Stop ride
+        $('btn-stop').addEventListener('click', stopRide);
+
+        // Label buttons
+        document.querySelectorAll('.label-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                assignLabel(btn.dataset.label);
+            });
+        });
+
+        // Dismiss button
+        $('btn-dismiss').addEventListener('click', () => {
+            assignLabel('unlabeled');
+        });
+
+        // Export buttons
+        $('btn-export-full').addEventListener('click', exportFullCSV);
+        $('btn-export-events').addEventListener('click', exportEventsCSV);
+        $('btn-export-video').addEventListener('click', () => {
+            if (!state.videoBlob) {
+                showToast('No video recorded!', true);
+                return;
+            }
+            const url = URL.createObjectURL(state.videoBlob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = `road_health_video_${new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-')}.webm`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            showToast('Video exported!');
+        });
+
+        // New ride
+        $('btn-new-ride').addEventListener('click', () => {
+            showScreen('start');
+        });
+
+        // Prevent accidental navigation
+        window.addEventListener('beforeunload', (e) => {
+            if (state.isRecording || state.readings.length > 0) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
+
+        /* ========== CAMERA ENUMERATION ========== */
+        async function enumerateCameras() {
+            const select = $('camera-select');
+            const status = $('cam-status');
+            
+            try {
+                // We need a temporary stream first to get permission, 
+                // otherwise enumerateDevices returns empty labels
+                let tempStream = null;
+                try {
+                    tempStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                } catch(e) {
+                    // Permission denied or no camera at all
+                    select.innerHTML = '<option value="">No camera access</option>';
+                    status.textContent = '❌ Camera permission denied';
+                    status.className = 'cam-status not-found';
+                    return;
+                }
+
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const cameras = devices.filter(d => d.kind === 'videoinput');
+                
+                // Stop the temporary stream
+                if (tempStream) {
+                    tempStream.getTracks().forEach(t => t.stop());
+                }
+
+                select.innerHTML = '';
+
+                if (cameras.length === 0) {
+                    select.innerHTML = '<option value="">No cameras found</option>';
+                    status.textContent = '❌ No cameras detected. Plug in OTG and tap Refresh.';
+                    status.className = 'cam-status not-found';
+                    return;
+                }
+
+                cameras.forEach((cam, i) => {
+                    const option = document.createElement('option');
+                    option.value = cam.deviceId;
+                    // USB webcams usually show up with a name like "USB Camera" or the brand name
+                    // Built-in phone cameras show as "camera2 0, facing back" etc.
+                    const label = cam.label || `Camera ${i + 1}`;
+                    option.textContent = label;
+                    select.appendChild(option);
+                });
+
+                // Try to auto-select the USB/external camera (it usually does NOT contain "facing")
+                const usbCam = cameras.find(c => 
+                    c.label && !c.label.toLowerCase().includes('facing') && !c.label.toLowerCase().includes('camera2')
+                );
+                if (usbCam) {
+                    select.value = usbCam.deviceId;
+                    status.textContent = `✅ USB Webcam detected: ${usbCam.label}`;
+                    status.className = 'cam-status found';
+                } else {
+                    status.textContent = `📷 ${cameras.length} camera(s) found. Select your USB webcam.`;
+                    status.className = 'cam-status found';
+                }
+            } catch (e) {
+                select.innerHTML = '<option value="">Error detecting cameras</option>';
+                status.textContent = '❌ ' + e.message;
+                status.className = 'cam-status not-found';
+            }
+        }
+
+        // Refresh button
+        $('btn-refresh-cam').addEventListener('click', enumerateCameras);
+
+        // Auto-detect when a USB device is plugged in or removed
+        if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) {
+            navigator.mediaDevices.addEventListener('devicechange', () => {
+                enumerateCameras();
+                showToast('Camera change detected! Refreshing...');
+            });
+        }
+
+        // Enumerate cameras on page load
+        enumerateCameras();
+
+    })();
+    </script>
+</body>
+</html>

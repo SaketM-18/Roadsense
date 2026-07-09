@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Road Health Detection — Data Labeling Tool</title>
+  <link rel="stylesheet" href="style.css">
+  
+  <!-- CDN Scripts for Parsing & Charting -->
+  <!-- Papa Parse for robust CSV parsing -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js" defer></script>
+  
+  <!-- Chart.js Core -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js" defer></script>
+  
+  <!-- Hammer.js (Required for Chart.js Zoom plugin gesture detection) -->
+  <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js" defer></script>
+  
+  <!-- Chart.js Zoom Plugin -->
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js" defer></script>
+  
+  <!-- Chart.js Annotation Plugin to draw colored label backgrounds -->
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js" defer></script>
+  
+  <!-- Custom App logic -->
+  <script src="app.js" defer></script>
+</head>
+<body>
+
+  <!-- App Header -->
+  <header>
+    <div class="logo-section">
+      <span class="logo-icon">🛣️</span>
+      <h1>Road Health Labeling Tool</h1>
+    </div>
+    
+    <div class="global-stats">
+      <div class="stat-badge total-rows" title="Number of raw data rows loaded">
+        Total Samples: <span class="count" id="stat-total-rows">0</span>
+      </div>
+      <div class="stat-badge potholes" title="Total potholes marked">
+        🔴 Potholes: <span class="count" id="stat-potholes">0</span>
+      </div>
+      <div class="stat-badge speedbreakers" title="Total speed breakers marked">
+        🟡 Speed Breakers: <span class="count" id="stat-speed-breakers">0</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Grid Container -->
+  <div class="app-container">
+    
+    <!-- Left Column: Data Loading & Interactive Graph -->
+    <div class="main-content">
+      
+      <!-- Upload Zone Card -->
+      <div class="card" id="upload-card">
+        <div class="upload-zone" id="drop-zone">
+          <div class="upload-icon">📥</div>
+          <p>Drag and drop your <strong>phyphox CSV file</strong> here, or click to browse.</p>
+          <input type="file" id="file-input" accept=".csv" style="display: none;">
+          
+          <div class="button-group">
+            <button class="btn btn-secondary" id="browse-btn">Browse Files</button>
+            <button class="btn btn-primary" id="sample-data-btn">Load Demo Data</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Visualizer Card -->
+      <div class="card" style="display: flex; flex-direction: column; position: relative;">
+        <!-- Loading overlay -->
+        <div class="loading-overlay" id="loading-overlay">
+          <div class="spinner"></div>
+          <p id="loading-text">Processing CSV data...</p>
+        </div>
+        
+        <!-- Interactive Chart Canvas -->
+        <div class="chart-container" id="chart-parent">
+          <div class="placeholder-msg" id="chart-placeholder">
+            <div class="icon">📊</div>
+            <p>Upload a sensor CSV file or load demo data to visualize the graph.</p>
+          </div>
+          <canvas id="sensor-chart" style="display: none;"></canvas>
+        </div>
+        
+        <!-- Chart Controls -->
+        <div class="chart-controls" id="chart-controls" style="display: none;">
+          <div>
+            <span>💡 <strong>Tip:</strong> Scroll/pinch to Zoom. Click and drag to Pan.</span>
+          </div>
+          <div class="chart-modes">
+            <button class="mode-btn active" id="btn-zoom-x" title="Zoom X-axis only">X-Zoom</button>
+            <button class="mode-btn" id="btn-zoom-xy" title="Zoom X and Y axes">XY-Zoom</button>
+            <button class="btn btn-secondary" style="padding: 2px 8px; font-size: 11px;" id="reset-zoom-btn">Reset Zoom</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Right Column: Label Panel & Lists -->
+    <div class="sidebar">
+      
+      <!-- Label Editor Section -->
+      <div class="card selection-panel">
+        <h3>🏷️ Label Editor</h3>
+        
+        <div class="range-inputs">
+          <div class="input-field">
+            <label for="input-start-time">Start Time (s)</label>
+            <input type="number" id="input-start-time" step="0.01" min="0" placeholder="0.00" disabled>
+          </div>
+          <div class="input-field">
+            <label for="input-end-time">End Time (s)</label>
+            <input type="number" id="input-end-time" step="0.01" min="0" placeholder="0.00" disabled>
+          </div>
+          <div class="input-field" style="grid-column: span 2; margin-top: 6px;">
+            <label for="input-selection-width">Selection Width: <span id="val-selection-width" style="color: var(--color-primary); font-weight: 600;">0.50</span>s</label>
+            <input type="range" id="input-selection-width" min="0.1" max="4.0" step="0.05" value="0.50" disabled>
+          </div>
+        </div>
+        
+        <div class="label-actions">
+          <button class="btn btn-pothole" id="btn-label-pothole" disabled>🔴 Pothole (P)</button>
+          <button class="btn btn-speedbreaker" id="btn-label-speedbreaker" disabled>🟡 Speed Breaker (S)</button>
+          <button class="btn btn-normal" id="btn-clear-selection" disabled>❌ Clear Selection (Esc)</button>
+        </div>
+      </div>
+      
+      <!-- Labels List Section -->
+      <div class="card labels-panel">
+        <h3>📋 Labeled Regions</h3>
+        <div class="labels-list-wrapper">
+          <table class="labels-table" id="labels-table">
+            <thead>
+              <tr>
+                <th>Range (s)</th>
+                <th>Type</th>
+                <th style="width: 40px; text-align: center;">Action</th>
+              </tr>
+            </thead>
+            <tbody id="labels-list-body">
+              <tr>
+                <td colspan="3" class="no-labels">No regions labeled yet.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      
+      <!-- Export Actions Card -->
+      <div class="card">
+        <button class="btn btn-primary" style="width: 100%; font-size: 14px; padding: 12px;" id="export-csv-btn" disabled>
+          📥 Export Labeled CSV
+        </button>
+      </div>
+      
+      <!-- Help & Shortcuts Card -->
+      <div class="card shortcuts-panel">
+        <h3>⌨️ Keyboard Shortcuts</h3>
+        <div class="shortcuts-grid">
+          <span class="key">P</span>
+          <span class="desc">Label selection as Pothole</span>
+          
+          <span class="key">S</span>
+          <span class="desc">Label selection as Speed Breaker</span>
+          
+          <span class="key">Esc</span>
+          <span class="desc">Clear selection active region</span>
+          
+          <span class="key">Ctrl+Z</span>
+          <span class="desc">Undo last labeling action</span>
+          
+          <span class="key">Ctrl+Y</span>
+          <span class="desc">Redo undone labeling action</span>
+          
+          <span class="key">Delete</span>
+          <span class="desc">Delete selected label in list</span>
+        </div>
+      </div>
+      
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast" id="toast-notification">
+    <span id="toast-message">Info message</span>
+  </div>
+
+</body>
+</html>
