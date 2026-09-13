@@ -1,0 +1,7 @@
+
+path: D:\Recovered_From_Sukee\Downloads\Saket\COLLEGE\Road Health\ml_pipeline\shadow_dataset
+train: images/train
+val: images/train
+
+names:
+  0: pothole

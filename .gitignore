@@ -1,0 +1,25 @@
+# Datasets and archives (>100MB)
+*.zip
+*.tar
+*.gz
+
+# Raw and stabilized ride videos (>50-100MB)
+*.mp4
+*.webm
+*.avi
+*.mov
+
+# Python cache & build
+__pycache__/
+*.py[cod]
+*$py.class
+*.pkl.bak
+
+# Microsoft Office temporary lock files
+~$*.docx
+~$*.pptx
+~$*.xlsx
+
+# OS files
+Thumbs.db
+.DS_Store

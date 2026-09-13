@@ -1,0 +1,58 @@
+ROADSENSE REPORT
+========================
+Overall: 2.4
+Distance: 1027.2804702189892m
+Issues: 35
+
+[0-20m] Rating: 1 | 0 issues
+[20-40m] Rating: 4 | 1 issues
+[40-60m] Rating: 1 | 0 issues
+[60-80m] Rating: 1 | 0 issues
+[80-100m] Rating: 4 | 1 issues
+[100-120m] Rating: 4 | 1 issues
+[120-140m] Rating: 4 | 3 issues
+[140-160m] Rating: 1 | 0 issues
+[160-180m] Rating: 1 | 0 issues
+[180-200m] Rating: 1 | 0 issues
+[200-220m] Rating: 3 | 1 issues
+[220-240m] Rating: 1 | 0 issues
+[240-260m] Rating: 1 | 0 issues
+[260-280m] Rating: 1 | 0 issues
+[280-300m] Rating: 4 | 2 issues
+[300-320m] Rating: 4 | 1 issues
+[320-340m] Rating: 1 | 0 issues
+[340-360m] Rating: 1 | 0 issues
+[360-380m] Rating: 4 | 1 issues
+[380-400m] Rating: 1 | 0 issues
+[400-420m] Rating: 5 | 2 issues
+[420-440m] Rating: 4 | 1 issues
+[440-460m] Rating: 4 | 1 issues
+[460-480m] Rating: 1 | 0 issues
+[480-500m] Rating: 4 | 2 issues
+[500-520m] Rating: 4 | 2 issues
+[520-540m] Rating: 4 | 1 issues
+[540-560m] Rating: 4 | 1 issues
+[560-580m] Rating: 4 | 2 issues
+[580-600m] Rating: 3 | 1 issues
+[600-620m] Rating: 1 | 0 issues
+[620-640m] Rating: 5 | 2 issues
+[640-660m] Rating: 1 | 0 issues
+[660-680m] Rating: 3 | 1 issues
+[680-700m] Rating: 1 | 0 issues
+[700-720m] Rating: 3 | 1 issues
+[720-740m] Rating: 1 | 0 issues
+[740-760m] Rating: 1 | 0 issues
+[760-780m] Rating: 5 | 2 issues
+[780-800m] Rating: 5 | 2 issues
+[800-820m] Rating: 1 | 0 issues
+[820-840m] Rating: 4 | 1 issues
+[840-860m] Rating: 1 | 0 issues
+[860-880m] Rating: 1 | 0 issues
+[880-900m] Rating: 2 | 1 issues
+[900-920m] Rating: 4 | 1 issues
+[920-940m] Rating: 1 | 0 issues
+[940-960m] Rating: 1 | 0 issues
+[960-980m] Rating: 1 | 0 issues
+[980-1000m] Rating: 1 | 0 issues
+[1000-1020m] Rating: 1 | 0 issues
+[1020-1027m] Rating: 1 | 0 issues
