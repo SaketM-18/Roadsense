@@ -455,7 +455,7 @@ def fuse_data(detections, csv_path, output_path, lookahead_distance_m=3.5, defau
     # High-precision IMU signal processing: Butterworth Bandpass + Jerk (da/dt)
     dt_med = np.median(np.diff(df['time_s'].values)) if len(df) > 2 else 0.025
     fs_est = 1.0 / max(0.005, dt_med)
-    target_accel = df['accel_dyn'].values if 'accel_dyn' in df.columns else df.get('accel_z', np.zeros(len(df))).values
+    target_accel = df['accel_dyn'].values if 'accel_dyn' in df.columns else (df['accel_z'].values if 'accel_z' in df.columns else np.zeros(len(df)))
     df['accel_bandpass'] = apply_butterworth_bandpass(target_accel, fs=fs_est, lowcut=5.0, highcut=18.0)
     df['jerk'] = compute_jerk(target_accel, df['time_s'].values)
 
@@ -605,7 +605,7 @@ def compute_quarter_car_iri(df, target_speed_kmh=80.0):
     if dt <= 0.001 or dt > 0.2:
         dt = 0.025
         
-    accel = df['accel_dyn'].values if 'accel_dyn' in df.columns else df.get('accel_z', np.zeros(len(df))).values
+    accel = df['accel_dyn'].values if 'accel_dyn' in df.columns else (df['accel_z'].values if 'accel_z' in df.columns else np.zeros(len(df)))
     
     # World Bank Golden Quarter-Car standard parameters normalized by sprung mass ms
     c = 6.0       # cs / ms (damping)

@@ -15,6 +15,7 @@ import subprocess
 
 KERNEL_ID = "saketmeda/roadsense-yolo11-real-world-segmentation-training"
 OUTPUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output_seg")
+TARGET_SEG_WEIGHTS = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "main", "cv_pipeline", "pothole_yolo11_seg.pt")
 TARGET_WEIGHTS = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "main", "cv_pipeline", "pothole_yolov8.pt")
 
 def check_status():
@@ -58,16 +59,19 @@ def main():
                     break
 
         if weights_found:
-            print(f"Deploying weights: {weights_found} -> {TARGET_WEIGHTS}")
+            print(f"Deploying weights: {weights_found} -> {TARGET_SEG_WEIGHTS}")
+            shutil.copy2(weights_found, TARGET_SEG_WEIGHTS)
             shutil.copy2(weights_found, TARGET_WEIGHTS)
-            print(f"[SUCCESS] Updated production model ({os.path.getsize(TARGET_WEIGHTS)/(1024*1024):.2f} MB)")
+            print(f"[SUCCESS] Updated production model ({os.path.getsize(TARGET_SEG_WEIGHTS)/(1024*1024):.2f} MB)")
             
-            metrics_file = os.path.join(OUTPUT_DIR, "metrics.json")
-            if os.path.exists(metrics_file):
-                with open(metrics_file, "r") as mf:
-                    metrics = json.load(mf)
-                print("\nTraining Metrics Summary:")
-                print(json.dumps(metrics, indent=2))
+            for m_name in ["metrics_seg.json", "metrics.json"]:
+                metrics_file = os.path.join(OUTPUT_DIR, m_name)
+                if os.path.exists(metrics_file):
+                    with open(metrics_file, "r") as mf:
+                        metrics = json.load(mf)
+                    print(f"\nTraining Metrics Summary ({m_name}):")
+                    print(json.dumps(metrics, indent=2))
+                    break
         else:
             print("Warning: No .pt model file found in output directory.")
     elif "RUNNING" in status_str or "QUEUED" in status_str:
