@@ -30,9 +30,34 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
-# Model selection: prefer newly trained YOLO11 segmentation, fallback to v8
+# Advanced Computer Vision Intelligence (SAHI, 3D Rim Gradient, Kinematics, Consensus)
+try:
+    from cv_pipeline.advanced_detector import (
+        sahi_corridor_inference,
+        fuse_ensemble_candidates,
+        is_flat_shadow,
+        check_perspective_kinematics,
+        suppress_duplicate_boxes
+    )
+    HAVE_ADVANCED_CV = True
+except ImportError:
+    try:
+        from main.cv_pipeline.advanced_detector import (
+            sahi_corridor_inference,
+            fuse_ensemble_candidates,
+            is_flat_shadow,
+            check_perspective_kinematics,
+            suppress_duplicate_boxes
+        )
+        HAVE_ADVANCED_CV = True
+    except ImportError:
+        HAVE_ADVANCED_CV = False
+
+# Model selection: ensemble, segmentation, and detection
 SEG_MODEL = os.path.join(BASE_DIR, 'cv_pipeline', 'pothole_yolo11_seg.pt')
 V8_MODEL = os.path.join(BASE_DIR, 'cv_pipeline', 'pothole_yolov8.pt')
+SEG_ONNX = os.path.join(BASE_DIR, 'cv_pipeline', 'pothole_yolo11_seg.onnx')
+V8_ONNX = os.path.join(BASE_DIR, 'cv_pipeline', 'pothole_yolov8.onnx')
 MODEL_FILE = SEG_MODEL if os.path.exists(SEG_MODEL) else V8_MODEL
 MASTER_CSV = os.path.join(BASE_DIR, 'cv_pipeline', 'master_training_data.csv')
 
@@ -64,6 +89,65 @@ def compute_jerk(accel_values, time_values):
     jerk[1:] = np.abs(da / dt)
     jerk[0] = jerk[1]
     return jerk
+
+
+def compute_adaptive_vehicle_baseline(df, has_3axis=True):
+    """
+    Self-Calibrating Vehicle Vibration Baseline (Online Trimmed Estimator).
+    Learns dynamic suspension characteristics for ANY vehicle (bike, car, bus, auto-rickshaw)
+    by computing trimmed rolling statistics across speed bins without requiring pre-recorded profiles.
+    """
+    if len(df) == 0:
+        df['z_score'] = 0.0
+        return df
+
+    target_signal = 'accel_dyn' if (has_3axis and 'accel_dyn' in df.columns) else ('accel_z' if 'accel_z' in df.columns else None)
+    if target_signal is None or target_signal not in df.columns:
+        df['z_score'] = 0.0
+        return df
+
+    bins = [0, 2, 4, 6, 8, 10, 15, 20, 100]
+    labels = ['0-2', '2-4', '4-6', '6-8', '8-10', '10-15', '15-20', '20+']
+    if 'speed' in df.columns:
+        df['speed_bin'] = pd.cut(df['speed'], bins=bins, labels=labels, include_lowest=True)
+    else:
+        df['speed_bin'] = '4-6'
+
+    profile_path = os.path.join(BASE_DIR, 'vehicle_profile.json')
+    prior = {}
+    if os.path.exists(profile_path):
+        try:
+            with open(profile_path, 'r') as f:
+                prior = json.load(f)
+        except Exception:
+            pass
+
+    z_scores = np.zeros(len(df), dtype=float)
+    
+    for bin_lbl in labels:
+        mask = (df['speed_bin'] == bin_lbl)
+        if mask.sum() == 0:
+            continue
+        vals = df.loc[mask, target_signal].values
+        
+        # Self-calibrating trimmed statistics (exclude extreme shocks > 85th percentile to isolate asphalt baseline)
+        if len(vals) >= 8:
+            q15, q85 = np.percentile(vals, [15, 85])
+            nominal = vals[(vals >= q15) & (vals <= q85)]
+            b_mean = float(np.mean(nominal)) if len(nominal) > 0 else float(np.mean(vals))
+            b_std = float(max(0.35, np.std(nominal))) if len(nominal) > 1 else float(max(0.5, np.std(vals)))
+        elif bin_lbl in prior:
+            p = prior[bin_lbl]
+            b_mean = float(p.get('mean_dyn' if target_signal == 'accel_dyn' else 'mean', 9.81 if target_signal == 'accel_z' else 1.0))
+            b_std = float(max(0.35, p.get('std_dyn' if target_signal == 'accel_dyn' else 'std', 1.0)))
+        else:
+            b_mean = float(np.median(vals))
+            b_std = float(max(0.5, np.std(vals)))
+            
+        z_scores[mask] = np.abs(vals - b_mean) / (b_std + 1e-6)
+
+    df['z_score'] = np.round(z_scores, 2)
+    return df
 
 
 def find_files(folder):
@@ -200,14 +284,42 @@ def compute_box_iou(box1, box2):
     return inter / (union + 1e-6)
 
 
-def run_yolo(video_path, conf_threshold=0.5, evidence_dir=None):
+def run_yolo(video_path, conf_threshold=0.40, evidence_dir=None, model_mode='ensemble', use_onnx=False):
     """
-    Runs YOLO on video with Multi-Frame Temporal Tracking to eliminate false alarms.
-    Only detections verified across >= 2 sampled frames (or high confidence >= 0.75) are confirmed.
-    Optionally saves high-resolution cropped snapshots for visual evidence.
+    Runs YOLO on video with Multi-Frame Temporal Tracking and Ensemble Cascaded Detection.
+    - model_mode='ensemble': Synchronously pairs 81.06% mAP YOLOv8 detection with YOLO11-Seg instance polygon masks.
+    - model_mode='v8': High-speed YOLOv8 bounding box detection.
+    - model_mode='seg': Direct YOLO11-Seg instance contour extraction.
+    - use_onnx=True: Loads ONNX Runtime models for accelerated inference.
     """
-    print("\n[STEP 2/4] Running YOLO pothole detection with Temporal Tracking...")
-    model = YOLO(MODEL_FILE)
+    print(f"\n[STEP 2/4] Running YOLO detection (Mode: {model_mode.upper()}, ONNX: {use_onnx}) with Temporal Tracking...")
+    
+    # Engine resolution
+    det_target = V8_ONNX if (use_onnx and os.path.exists(V8_ONNX)) else V8_MODEL
+    seg_target = SEG_ONNX if (use_onnx and os.path.exists(SEG_ONNX)) else SEG_MODEL
+    
+    model_det = None
+    model_seg = None
+    
+    if model_mode in ('ensemble', 'v8') and os.path.exists(det_target):
+        try:
+            model_det = YOLO(det_target)
+            print(f"  Stage 1 Engine: Loaded high-recall detector ({os.path.basename(det_target)})")
+        except Exception as e:
+            print(f"  Warning: Could not load detector: {e}")
+            
+    if model_mode in ('ensemble', 'seg') and os.path.exists(seg_target):
+        try:
+            model_seg = YOLO(seg_target)
+            print(f"  Stage 2 Engine: Loaded polygon instance segmenter ({os.path.basename(seg_target)})")
+        except Exception as e:
+            print(f"  Warning: Could not load segmenter: {e}")
+
+    if model_det is None and model_seg is None:
+        fallback = MODEL_FILE
+        print(f"  Fallback Engine: {os.path.basename(fallback)}")
+        model_det = YOLO(fallback)
+
     cap = cv2.VideoCapture(video_path)
     fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
     if fps > 120.0 or fps <= 0:
@@ -244,42 +356,118 @@ def run_yolo(video_path, conf_threshold=0.5, evidence_dir=None):
             merged = cv2.merge((cl, a_channel, b_channel))
             enhanced = cv2.cvtColor(merged, cv2.COLOR_LAB2BGR)
             
-            current_boxes = []
-            results = model.predict(enhanced, conf=conf_threshold, verbose=False)
-            for r in results:
-                has_masks = hasattr(r, 'masks') and r.masks is not None and len(r.masks) > 0
-                for i, box in enumerate(r.boxes):
-                    coords = box.xyxy[0].cpu().numpy()
-                    x1, y1, x2, y2 = map(int, coords)
-                    y_center = (y1 + y2) / 2
-                    
-                    if y_center < mask_y:
-                        cls_id = int(box.cls[0])
-                        label_name = model.names.get(cls_id, "").lower() if hasattr(model, 'names') and model.names else ""
-                        
-                        # Only accept pothole detections for pavement cavity shock fusion
-                        if "pothole" in label_name or cls_id == 0:
-                            conf = float(box.conf[0])
-                            
-                            # Extract pixel-precise polygon contour if segmentation model is active
-                            polygon = None
-                            seg_area_pct = None
-                            if has_masks and i < len(r.masks.xy):
-                                poly_pts = r.masks.xy[i]
-                                if len(poly_pts) >= 3:
-                                    polygon = poly_pts.tolist()
-                                    poly_area_px = cv2.contourArea(np.array(poly_pts, dtype=np.float32))
-                                    seg_area_pct = round((poly_area_px / (w * h)) * 100.0, 3)
+            cand_boxes_det = []
+            cand_boxes_det = []
+            cand_boxes_seg = []
 
-                            current_boxes.append({
-                                'box': (x1, y1, x2, y2),
-                                'conf': conf,
-                                'defect_type': 'pothole',
-                                'polygon': polygon,
-                                'seg_area_pct': seg_area_pct,
-                                'frame': frame
-                            })
-            
+            # 1. High-Recall Detector (Stage 1)
+            if model_det is not None:
+                r_det = model_det.predict(enhanced, conf=conf_threshold, verbose=False)
+                for r in r_det:
+                    for box in r.boxes:
+                        bx1, by1, bx2, by2 = map(int, box.xyxy[0].cpu().numpy())
+                        if (by1 + by2) / 2 < mask_y:
+                            cls_id = int(box.cls[0])
+                            lbl = model_det.names.get(cls_id, "").lower() if hasattr(model_det, 'names') and model_det.names else ""
+                            if "pothole" in lbl or cls_id == 0:
+                                cand_boxes_det.append({
+                                    'box': (bx1, by1, bx2, by2),
+                                    'conf': float(box.conf[0])
+                                })
+                if HAVE_ADVANCED_CV:
+                    sahi_det = sahi_corridor_inference(model_det, enhanced, conf_threshold=conf_threshold)
+                    cand_boxes_det.extend([s for s in sahi_det if (s['box'][1] + s['box'][3]) / 2 < mask_y])
+                    cand_boxes_det = suppress_duplicate_boxes(cand_boxes_det, iou_thresh=0.45)
+
+            # 2. Polygon Instance Segmenter (Stage 2)
+            if model_seg is not None:
+                r_seg = model_seg.predict(enhanced, conf=conf_threshold, verbose=False)
+                for r in r_seg:
+                    has_m = hasattr(r, 'masks') and r.masks is not None and len(r.masks) > 0
+                    for i, box in enumerate(r.boxes):
+                        bx1, by1, bx2, by2 = map(int, box.xyxy[0].cpu().numpy())
+                        if (by1 + by2) / 2 < mask_y:
+                            cls_id = int(box.cls[0])
+                            lbl = model_seg.names.get(cls_id, "").lower() if hasattr(model_seg, 'names') and model_seg.names else ""
+                            if "pothole" in lbl or cls_id == 0:
+                                poly = None
+                                s_area = None
+                                if has_m and i < len(r.masks.xy):
+                                    pts = r.masks.xy[i]
+                                    if len(pts) >= 3:
+                                        poly = pts.tolist()
+                                        poly_area_px = cv2.contourArea(np.array(pts, dtype=np.float32))
+                                        s_area = round((poly_area_px / (w * h)) * 100.0, 3)
+                                cand_boxes_seg.append({
+                                    'box': (bx1, by1, bx2, by2),
+                                    'conf': float(box.conf[0]),
+                                    'polygon': poly,
+                                    'seg_area_pct': s_area
+                                })
+                if HAVE_ADVANCED_CV:
+                    sahi_seg = sahi_corridor_inference(model_seg, enhanced, conf_threshold=conf_threshold)
+                    cand_boxes_seg.extend([s for s in sahi_seg if (s['box'][1] + s['box'][3]) / 2 < mask_y])
+                    cand_boxes_seg = suppress_duplicate_boxes(cand_boxes_seg, iou_thresh=0.45)
+
+            # 3. Ensemble Fusion & 3D Rim Gradient Depth Check
+            if HAVE_ADVANCED_CV:
+                current_boxes = fuse_ensemble_candidates(cand_boxes_det, cand_boxes_seg, enhanced, iou_thresh=0.25)
+            elif model_det is not None and model_seg is not None:
+                matched_seg_idx = set()
+                for d_box in cand_boxes_det:
+                    best_match = None
+                    best_iou = 0.0
+                    best_s_idx = -1
+                    for s_idx, s_box in enumerate(cand_boxes_seg):
+                        iou = compute_box_iou(d_box['box'], s_box['box'])
+                        if iou > best_iou:
+                            best_iou = iou
+                            best_s_idx = s_idx
+
+                    if best_s_idx >= 0 and best_iou >= 0.25:
+                        matched_seg_idx.add(best_s_idx)
+                        s_box = cand_boxes_seg[best_s_idx]
+                        ens_conf = min(0.99, max(d_box['conf'], s_box['conf']) + 0.05)
+                        current_boxes.append({
+                            'box': s_box['box'] if s_box.get('polygon') else d_box['box'],
+                            'conf': ens_conf,
+                            'defect_type': 'pothole',
+                            'polygon': s_box.get('polygon'),
+                            'seg_area_pct': s_box.get('seg_area_pct'),
+                            'frame': frame
+                        })
+                    else:
+                        current_boxes.append({
+                            'box': d_box['box'],
+                            'conf': d_box['conf'],
+                            'defect_type': 'pothole',
+                            'polygon': None,
+                            'seg_area_pct': None,
+                            'frame': frame
+                        })
+
+                for s_idx, s_box in enumerate(cand_boxes_seg):
+                    if s_idx not in matched_seg_idx:
+                        current_boxes.append({
+                            'box': s_box['box'],
+                            'conf': s_box['conf'],
+                            'defect_type': 'pothole',
+                            'polygon': s_box.get('polygon'),
+                            'seg_area_pct': s_box.get('seg_area_pct'),
+                            'frame': frame
+                        })
+            else:
+                active_cands = cand_boxes_seg if model_seg is not None else cand_boxes_det
+                for c in active_cands:
+                    current_boxes.append({
+                        'box': c['box'],
+                        'conf': c['conf'],
+                        'defect_type': 'pothole',
+                        'polygon': c.get('polygon'),
+                        'seg_area_pct': c.get('seg_area_pct'),
+                        'frame': frame
+                    })
+
             # Match current detections to active tracks
             matched_indices = set()
             for track in active_tracks:
@@ -309,6 +497,8 @@ def run_yolo(video_path, conf_threshold=0.5, evidence_dir=None):
                     track['last_seen_frame'] = frame_idx
                     track['last_time_sec'] = time_sec
                     track['box'] = cb['box']
+                    if 'first_box' not in track:
+                        track['first_box'] = cb['box']
                     if cb['conf'] > track['conf']:
                         track['conf'] = cb['conf']
                         track['best_frame'] = cb['frame'].copy()
@@ -326,6 +516,7 @@ def run_yolo(video_path, conf_threshold=0.5, evidence_dir=None):
                         'last_seen_frame': frame_idx,
                         'hits': 1,
                         'box': cb['box'],
+                        'first_box': cb['box'],
                         'best_box': cb['box'],
                         'conf': cb['conf'],
                         'polygon': cb['polygon'],
@@ -337,6 +528,13 @@ def run_yolo(video_path, conf_threshold=0.5, evidence_dir=None):
             remaining_tracks = []
             for track in active_tracks:
                 if frame_idx - track['last_seen_frame'] > 12:
+                    # Optical Perspective Kinematics check
+                    if HAVE_ADVANCED_CV:
+                        is_valid, conf_bonus = check_perspective_kinematics(track)
+                        if not is_valid:
+                            continue  # Drop receding or upward-moving false alarms
+                        track['conf'] = min(0.99, max(0.1, track['conf'] + conf_bonus))
+
                     if track['hits'] >= 2 or track['conf'] >= 0.75:
                         bx1, by1, bx2, by2 = track['best_box']
                         bw = bx2 - bx1
@@ -388,16 +586,34 @@ def run_yolo(video_path, conf_threshold=0.5, evidence_dir=None):
     
     # Finalize any remaining active tracks
     for track in active_tracks:
+        if HAVE_ADVANCED_CV:
+            is_valid, conf_bonus = check_perspective_kinematics(track)
+            if not is_valid:
+                continue
+            track['conf'] = min(0.99, max(0.1, track['conf'] + conf_bonus))
+
         if track['hits'] >= 2 or track['conf'] >= 0.75:
             bx1, by1, bx2, by2 = track['best_box']
             bw = bx2 - bx1
             bh = by2 - by1
-            box_area_pct = round((bw * bh) / (w * h) * 100, 2)
+            
+            if track.get('seg_area_pct') is not None and track['seg_area_pct'] > 0:
+                box_area_pct = track['seg_area_pct']
+            else:
+                box_area_pct = round((bw * bh) / (w * h) * 100, 2)
             
             snapshot_file = None
             if evidence_dir and snapshot_count < 25:
                 snap_frame = track['best_frame']
-                cv2.rectangle(snap_frame, (bx1, by1), (bx2, by2), (0, 255, 0), 2)
+                poly = track.get('polygon')
+                if poly is not None and len(poly) >= 3:
+                    pts = np.array(poly, dtype=np.int32)
+                    overlay = snap_frame.copy()
+                    cv2.fillPoly(overlay, [pts], (0, 255, 0))
+                    cv2.addWeighted(overlay, 0.4, snap_frame, 0.6, 0, snap_frame)
+                    cv2.polylines(snap_frame, [pts], isClosed=True, color=(0, 255, 0), thickness=2)
+                else:
+                    cv2.rectangle(snap_frame, (bx1, by1), (bx2, by2), (0, 255, 0), 2)
                 cv2.putText(snap_frame, f"Pothole: {int(track['conf']*100)}%", 
                             (bx1, max(by1 - 8, 20)), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
                 snapshot_name = f"evidence_{int(track['first_time_sec']):03d}s_{snapshot_count+1}.jpg"
@@ -459,27 +675,10 @@ def fuse_data(detections, csv_path, output_path, lookahead_distance_m=3.5, defau
     df['accel_bandpass'] = apply_butterworth_bandpass(target_accel, fs=fs_est, lowcut=5.0, highcut=18.0)
     df['jerk'] = compute_jerk(target_accel, df['time_s'].values)
 
-    profile_path = os.path.join(BASE_DIR, 'vehicle_profile.json')
-    if os.path.exists(profile_path) and ('accel_z' in df.columns or 'accel_dyn' in df.columns) and 'speed' in df.columns:
-        print("  Applying physical sensor calibration profile...")
-        with open(profile_path, 'r') as f:
-            profile = json.load(f)
-            
-        bins = [0, 2, 4, 6, 8, 10, 15, 20, 100]
-        labels = ['0-2', '2-4', '4-6', '6-8', '8-10', '10-15', '15-20', '20+']
-        df['speed_bin'] = pd.cut(df['speed'], bins=bins, labels=labels, include_lowest=True)
-        
-        for idx, row in df.iterrows():
-            bin_label = str(row['speed_bin'])
-            if bin_label in profile and row['speed'] > 0.5:
-                if has_3axis and 'mean_dyn' in profile[bin_label]:
-                    mean_val = profile[bin_label]['mean_dyn']
-                    std_val = profile[bin_label]['std_dyn']
-                    df.at[idx, 'z_score'] = abs(row['accel_dyn'] - mean_val) / (std_val + 1e-6)
-                else:
-                    mean_z = profile[bin_label]['mean']
-                    std_z = profile[bin_label]['std']
-                    df.at[idx, 'z_score'] = abs(row['accel_z'] - mean_z) / (std_z + 1e-6)
+    # Self-Calibrating Adaptive Vehicle Baseline (Online Trimmed Estimator)
+    if ('accel_z' in df.columns or 'accel_dyn' in df.columns):
+        print("  Applying self-calibrating adaptive vehicle vibration baseline...")
+        df = compute_adaptive_vehicle_baseline(df, has_3axis=has_3axis)
 
     # 2. Camera Verification & Multi-Modal Gating (Tri-Modal: Fused, Vision, Sensor)
     has_telemetry_sensor = (
@@ -865,7 +1064,7 @@ def retrain_model():
     os.system(f'python "{train_script}"')
 
 
-def process_ride_folder(folder, do_stabilize=True, force_stabilize=False, do_retrain=False, conf_threshold=0.5, lookahead_distance_m=3.5):
+def process_ride_folder(folder, do_stabilize=True, force_stabilize=False, do_retrain=False, conf_threshold=0.40, lookahead_distance_m=3.5, model_mode='ensemble', use_onnx=False):
     """
     Complete end-to-end processing of a ride directory.
     Returns a dictionary of summary statistics and file paths.
@@ -897,7 +1096,7 @@ def process_ride_folder(folder, do_stabilize=True, force_stabilize=False, do_ret
         else:
             video_to_analyze = video_file
 
-        detections = run_yolo(video_to_analyze, conf_threshold=conf_threshold, evidence_dir=evidence_dir)
+        detections = run_yolo(video_to_analyze, conf_threshold=conf_threshold, evidence_dir=evidence_dir, model_mode=model_mode, use_onnx=use_onnx)
     else:
         print("  Notice: No video file found. Running in physical sensor-only verification mode.")
 
@@ -985,9 +1184,19 @@ if __name__ == '__main__':
     flag_no_stabilize = '--no-stabilize' in sys.argv
     flag_force_stabilize = '--force-stabilize' in sys.argv
     
+    model_mode = 'ensemble'
+    for a in sys.argv:
+        if a.startswith('--model='):
+            model_mode = a.split('=', 1)[1]
+        elif a in ('--seg', '--v8', '--ensemble'):
+            model_mode = a.lstrip('-')
+    use_onnx = '--onnx' in sys.argv
+    
     process_ride_folder(
         target_folder,
         do_stabilize=not flag_no_stabilize,
         force_stabilize=flag_force_stabilize,
-        do_retrain=flag_retrain
+        do_retrain=flag_retrain,
+        model_mode=model_mode,
+        use_onnx=use_onnx
     )

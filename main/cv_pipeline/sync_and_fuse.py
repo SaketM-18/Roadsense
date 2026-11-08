@@ -43,6 +43,67 @@ def apply_butterworth_bandpass(signal, fs, lowcut=5.0, highcut=18.0, order=3):
         return signal
 
 
+def compute_adaptive_vehicle_baseline(df, has_3axis=True):
+    """
+    Self-Calibrating Vehicle Vibration Baseline (Online Trimmed Estimator).
+    Learns dynamic suspension characteristics for ANY vehicle (bike, car, bus, auto-rickshaw)
+    by computing trimmed rolling statistics across speed bins without requiring pre-recorded profiles.
+    """
+    if len(df) == 0:
+        df['z_score'] = 0.0
+        return df
+
+    target_signal = 'accel_dyn' if (has_3axis and 'accel_dyn' in df.columns) else ('accel_z' if 'accel_z' in df.columns else None)
+    if target_signal is None or target_signal not in df.columns:
+        df['z_score'] = 0.0
+        return df
+
+    bins = [0, 2, 4, 6, 8, 10, 15, 20, 100]
+    labels = ['0-2', '2-4', '4-6', '6-8', '8-10', '10-15', '15-20', '20+']
+    if 'speed' in df.columns:
+        df['speed_bin'] = pd.cut(df['speed'], bins=bins, labels=labels, include_lowest=True)
+    else:
+        df['speed_bin'] = '4-6'
+
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    profile_path = os.path.join(base_dir, 'vehicle_profile.json')
+    prior = {}
+    if os.path.exists(profile_path):
+        try:
+            import json
+            with open(profile_path, 'r') as f:
+                prior = json.load(f)
+        except Exception:
+            pass
+
+    z_scores = np.zeros(len(df), dtype=float)
+    
+    for bin_lbl in labels:
+        mask = (df['speed_bin'] == bin_lbl)
+        if mask.sum() == 0:
+            continue
+        vals = df.loc[mask, target_signal].values
+        
+        # Self-calibrating trimmed statistics (exclude extreme shocks > 85th percentile to isolate asphalt baseline)
+        if len(vals) >= 8:
+            q15, q85 = np.percentile(vals, [15, 85])
+            nominal = vals[(vals >= q15) & (vals <= q85)]
+            b_mean = float(np.mean(nominal)) if len(nominal) > 0 else float(np.mean(vals))
+            b_std = float(max(0.35, np.std(nominal))) if len(nominal) > 1 else float(max(0.5, np.std(vals)))
+        elif bin_lbl in prior:
+            p = prior[bin_lbl]
+            b_mean = float(p.get('mean_dyn' if target_signal == 'accel_dyn' else 'mean', 9.81 if target_signal == 'accel_z' else 1.0))
+            b_std = float(max(0.35, p.get('std_dyn' if target_signal == 'accel_dyn' else 'std', 1.0)))
+        else:
+            b_mean = float(np.median(vals))
+            b_std = float(max(0.5, np.std(vals)))
+            
+        z_scores[mask] = np.abs(vals - b_mean) / (b_std + 1e-6)
+
+    df['z_score'] = np.round(z_scores, 2)
+    return df
+
+
 def compute_jerk(accel_values, time_values):
     """
     Compute instantaneous Jerk (da/dt) in m/s^3.
@@ -159,15 +220,8 @@ def fuse_sensor_and_vision_data(
     # 3. Compute Jerk (da/dt)
     df_sensor['jerk'] = compute_jerk(df_sensor['accel_dyn'].values, df_sensor['time_s'].values)
 
-    # 4. Compute Dynamic Rolling Baseline & Z-Score (10s rolling window)
-    window_samples = max(10, int(10.0 * fs))
-    roll_mean = df_sensor['accel_dyn'].rolling(window=window_samples, min_periods=5, center=True).mean()
-    roll_std = df_sensor['accel_dyn'].rolling(window=window_samples, min_periods=5, center=True).std()
-    roll_mean = roll_mean.bfill().ffill()
-    roll_std = roll_std.bfill().ffill().replace(0, 0.5)
-
-    df_sensor['z_score'] = np.abs(df_sensor['accel_dyn'] - roll_mean) / roll_std
-    df_sensor['z_score'] = df_sensor['z_score'].fillna(0.0).round(2)
+    # 4. Self-Calibrating Adaptive Vehicle Baseline (Online Trimmed Estimator)
+    df_sensor = compute_adaptive_vehicle_baseline(df_sensor, has_3axis=True)
 
     # 5. Initialize Output Labels
     df_sensor['Label'] = 0
