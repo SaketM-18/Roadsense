@@ -42,7 +42,7 @@ def main():
         
         # Check files
         weights_found = None
-        for cand in ["pothole_yolov8.pt", "roadsense_hazard_v2.pt", "best.pt"]:
+        for cand in ["pothole_yolo11_seg.pt", "pothole_yolov8.pt", "roadsense_hazard_v2.pt", "best.pt"]:
             p = os.path.join(OUTPUT_DIR, cand)
             if os.path.exists(p):
                 weights_found = p
