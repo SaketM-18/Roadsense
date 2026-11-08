@@ -248,7 +248,8 @@ def run_yolo(video_path, conf_threshold=0.5, evidence_dir=None):
             current_boxes = []
             results = model.predict(enhanced, conf=conf_threshold, verbose=False)
             for r in results:
-                for box in r.boxes:
+                has_masks = hasattr(r, 'masks') and r.masks is not None and len(r.masks) > 0
+                for i, box in enumerate(r.boxes):
                     coords = box.xyxy[0].cpu().numpy()
                     x1, y1, x2, y2 = map(int, coords)
                     y_center = (y1 + y2) / 2
@@ -260,10 +261,23 @@ def run_yolo(video_path, conf_threshold=0.5, evidence_dir=None):
                         # Only accept pothole detections for pavement cavity shock fusion
                         if "pothole" in label_name or cls_id == 0:
                             conf = float(box.conf[0])
+                            
+                            # Extract pixel-precise polygon contour if segmentation model is active
+                            polygon = None
+                            seg_area_pct = None
+                            if has_masks and i < len(r.masks.xy):
+                                poly_pts = r.masks.xy[i]
+                                if len(poly_pts) >= 3:
+                                    polygon = poly_pts.tolist()
+                                    poly_area_px = cv2.contourArea(np.array(poly_pts, dtype=np.float32))
+                                    seg_area_pct = round((poly_area_px / (w * h)) * 100.0, 3)
+
                             current_boxes.append({
                                 'box': (x1, y1, x2, y2),
                                 'conf': conf,
                                 'defect_type': 'pothole',
+                                'polygon': polygon,
+                                'seg_area_pct': seg_area_pct,
                                 'frame': frame
                             })
             
@@ -300,6 +314,8 @@ def run_yolo(video_path, conf_threshold=0.5, evidence_dir=None):
                         track['conf'] = cb['conf']
                         track['best_frame'] = cb['frame'].copy()
                         track['best_box'] = cb['box']
+                        track['polygon'] = cb['polygon']
+                        track['seg_area_pct'] = cb['seg_area_pct']
 
             # Unmatched detections start new candidate tracklets
             for i, cb in enumerate(current_boxes):
@@ -313,6 +329,8 @@ def run_yolo(video_path, conf_threshold=0.5, evidence_dir=None):
                         'box': cb['box'],
                         'best_box': cb['box'],
                         'conf': cb['conf'],
+                        'polygon': cb['polygon'],
+                        'seg_area_pct': cb['seg_area_pct'],
                         'best_frame': cb['frame'].copy()
                     })
 
@@ -324,12 +342,28 @@ def run_yolo(video_path, conf_threshold=0.5, evidence_dir=None):
                         bx1, by1, bx2, by2 = track['best_box']
                         bw = bx2 - bx1
                         bh = by2 - by1
-                        box_area_pct = round((bw * bh) / (w * h) * 100, 2)
+                        
+                        # Use true polygon segmentation area if available, else box area
+                        if track.get('seg_area_pct') is not None and track['seg_area_pct'] > 0:
+                            box_area_pct = track['seg_area_pct']
+                        else:
+                            box_area_pct = round((bw * bh) / (w * h) * 100, 2)
                         
                         snapshot_file = None
                         if evidence_dir and snapshot_count < 25:
                             snap_frame = track['best_frame']
-                            cv2.rectangle(snap_frame, (bx1, by1), (bx2, by2), (0, 255, 0), 2)
+                            poly = track.get('polygon')
+                            
+                            # Render semi-transparent polygon contour mask if segmentation is active
+                            if poly is not None and len(poly) >= 3:
+                                pts = np.array(poly, dtype=np.int32)
+                                overlay = snap_frame.copy()
+                                cv2.fillPoly(overlay, [pts], (0, 255, 0))
+                                cv2.addWeighted(overlay, 0.4, snap_frame, 0.6, 0, snap_frame)
+                                cv2.polylines(snap_frame, [pts], isClosed=True, color=(0, 255, 0), thickness=2)
+                            else:
+                                cv2.rectangle(snap_frame, (bx1, by1), (bx2, by2), (0, 255, 0), 2)
+                                
                             cv2.putText(snap_frame, f"Pothole: {int(track['conf']*100)}%", 
                                         (bx1, max(by1 - 8, 20)), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
                             snapshot_name = f"evidence_{int(track['first_time_sec']):03d}s_{snapshot_count+1}.jpg"

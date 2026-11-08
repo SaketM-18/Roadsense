@@ -101,15 +101,15 @@ def analyze_video(
         # Apply CLAHE to enhance asphalt texture under shadows
         proc_frame = apply_clahe(frame) if use_clahe else frame
 
-        # Run inference (stream=False to get standard Results object)
+        # Run inference (supports both detection and instance segmentation)
         results = model.predict(proc_frame, conf=conf_threshold, verbose=False)
         
         current_detections = []
         for r in results:
-            for box in r.boxes:
+            has_masks = hasattr(r, 'masks') and r.masks is not None and len(r.masks) > 0
+            for i, box in enumerate(r.boxes):
                 cls_id = int(box.cls[0])
                 conf = float(box.conf[0])
-                name = model.names.get(cls_id, "").lower()
                 
                 # Extract class and confidence
                 label_name = model.names.get(cls_id, "").lower() if hasattr(model, 'names') and model.names else ""
@@ -124,12 +124,24 @@ def analyze_video(
                 else:
                     defect_type = label_name or "hazard"
 
-                # Filter or categorize detection (potholes prioritized, cracks/manholes recognized)
                 xyxy = [int(v) for v in box.xyxy[0].tolist()]
+                
+                # Extract pixel-precise polygon contour if segmentation model is active
+                polygon = None
+                seg_area_pct = None
+                if has_masks and i < len(r.masks.xy):
+                    poly_pts = r.masks.xy[i]
+                    if len(poly_pts) >= 3:
+                        polygon = poly_pts.tolist()
+                        poly_area_px = cv2.contourArea(np.array(poly_pts, dtype=np.float32))
+                        seg_area_pct = round((poly_area_px / (w * h)) * 100.0, 3)
+
                 current_detections.append({
                     'box': xyxy,
                     'conf': conf,
                     'defect_type': defect_type,
+                    'polygon': polygon,
+                    'seg_area_pct': seg_area_pct,
                     'frame': frame
                 })
 
@@ -168,6 +180,8 @@ def analyze_video(
                     track['defect_type'] = cd['defect_type']
                     track['best_frame'] = cd['frame'].copy()
                     track['best_box'] = cd['box']
+                    track['polygon'] = cd['polygon']
+                    track['seg_area_pct'] = cd['seg_area_pct']
 
         # Start new tracklets for unmatched detections
         for i, cd in enumerate(current_detections):
@@ -182,6 +196,8 @@ def analyze_video(
                     'best_box': cd['box'],
                     'best_conf': cd['conf'],
                     'defect_type': cd['defect_type'],
+                    'polygon': cd['polygon'],
+                    'seg_area_pct': cd['seg_area_pct'],
                     'best_frame': cd['frame'].copy()
                 })
 
@@ -194,15 +210,31 @@ def analyze_video(
                     bx1, by1, bx2, by2 = track['best_box']
                     box_w = bx2 - bx1
                     box_h = by2 - by1
-                    area_pct = round((box_w * box_h) / (w * h) * 100.0, 2)
                     d_type = track.get('defect_type', 'pothole')
+
+                    # Use true polygon segmentation area if available, else box area
+                    if track.get('seg_area_pct') is not None and track['seg_area_pct'] > 0:
+                        area_pct = track['seg_area_pct']
+                    else:
+                        area_pct = round((box_w * box_h) / (w * h) * 100.0, 2)
 
                     snapshot_path = None
                     if evidence_dir and snapshot_count < 30:
                         snap = track['best_frame']
                         # Color coding: Green for pothole, Orange for crack, Cyan for manhole
                         color = (0, 255, 0) if d_type == "pothole" else ((0, 165, 255) if d_type == "crack" else (255, 255, 0))
-                        cv2.rectangle(snap, (bx1, by1), (bx2, by2), color, 2)
+                        
+                        # Render semi-transparent polygon contour mask if segmentation is active
+                        poly = track.get('polygon')
+                        if poly is not None and len(poly) >= 3:
+                            pts = np.array(poly, dtype=np.int32)
+                            overlay = snap.copy()
+                            cv2.fillPoly(overlay, [pts], color)
+                            cv2.addWeighted(overlay, 0.4, snap, 0.6, 0, snap)
+                            cv2.polylines(snap, [pts], isClosed=True, color=color, thickness=2)
+                        else:
+                            cv2.rectangle(snap, (bx1, by1), (bx2, by2), color, 2)
+
                         cv2.putText(snap, f"{d_type.capitalize()}: {int(track['best_conf']*100)}%", 
                                     (bx1, max(by1 - 8, 20)), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
                         snap_name = f"evidence_{int(track['first_time_sec']):03d}s_{snapshot_count+1}.jpg"
@@ -234,8 +266,11 @@ def analyze_video(
             bx1, by1, bx2, by2 = track['best_box']
             box_w = bx2 - bx1
             box_h = by2 - by1
-            area_pct = round((box_w * box_h) / (w * h) * 100.0, 2)
             d_type = track.get('defect_type', 'pothole')
+            if track.get('seg_area_pct') is not None and track['seg_area_pct'] > 0:
+                area_pct = track['seg_area_pct']
+            else:
+                area_pct = round((box_w * box_h) / (w * h) * 100.0, 2)
             final_detections.append({
                 "video_time_sec": round(track['first_time_sec'], 3),
                 "confidence": round(track['best_conf'], 2),

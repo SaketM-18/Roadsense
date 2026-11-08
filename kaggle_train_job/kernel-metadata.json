@@ -1,7 +1,7 @@
 {
-  "id": "saketmeda/roadsense-real-world-road-hazards-yolov8-training",
-  "title": "RoadSense Real-World Road Hazards YOLOv8 Training",
-  "code_file": "train_kaggle.py",
+  "id": "saketmeda/roadsense-yolo11-real-world-segmentation-training",
+  "title": "RoadSense YOLO11 Real-World Segmentation Training",
+  "code_file": "train_kaggle_seg.py",
   "language": "python",
   "kernel_type": "script",
   "is_private": "true",
@@ -9,7 +9,7 @@
   "enable_tpu": "false",
   "enable_internet": "true",
   "dataset_sources": [
-    "anggadwisunarto/potholes-detection-yolov8",
+    "farzadnekouei/pothole-image-segmentation-dataset",
     "lorenzoarcioni/road-damage-dataset-potholes-cracks-and-manholes"
   ],
   "competition_sources": [],

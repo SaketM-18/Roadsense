@@ -13,8 +13,8 @@ import shutil
 import json
 import subprocess
 
-KERNEL_ID = "saketmeda/roadsense-real-world-road-hazards-yolov8-training"
-OUTPUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output_v3")
+KERNEL_ID = "saketmeda/roadsense-yolo11-real-world-segmentation-training"
+OUTPUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output_seg")
 TARGET_WEIGHTS = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "main", "cv_pipeline", "pothole_yolov8.pt")
 
 def check_status():
