@@ -10,6 +10,7 @@
   "enable_internet": "true",
   "dataset_sources": [
     "farzadnekouei/pothole-image-segmentation-dataset",
+    "raunakkesharwani/pothole-image-segmentation-dataset",
     "lorenzoarcioni/road-damage-dataset-potholes-cracks-and-manholes"
   ],
   "competition_sources": [],
