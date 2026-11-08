@@ -4,10 +4,12 @@ from model_trainer import ModelTrainer
 from inference import run_inference
 
 def main():
-    # Define paths
-    base_dir = r"d:\Recovered_From_Sukee\Downloads\Saket\COLLEGE\Road Health"
-    data_dir = os.path.join(base_dir, "accelaration with g data")
-    model_save_path = os.path.join(os.path.dirname(__file__), "road_health_rf_model.pkl")
+    # Define paths dynamically
+    ml_dir = os.path.dirname(os.path.abspath(__file__))
+    main_dir = os.path.dirname(ml_dir)
+    base_dir = os.path.dirname(main_dir)
+    data_dir = os.path.join(base_dir, "archive", "accelaration with g data")
+    model_save_path = os.path.join(ml_dir, "road_health_rf_model.pkl")
 
     print("=== Road Health Detection ML Pipeline ===")
 

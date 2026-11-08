@@ -1,0 +1,25 @@
+{
+  "name": "RoadSense — AI Infrastructure Intelligence",
+  "short_name": "RoadSense",
+  "description": "Autonomous road surveying powered by edge computer vision and 40Hz sensor dynamics.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#040508",
+  "theme_color": "#040508",
+  "icons": [
+    {
+      "src": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='192' height='192' viewBox='0 0 192 192'><rect width='192' height='192' rx='36' fill='%23040508'/><circle cx='96' cy='96' r='60' stroke='%23ccff00' stroke-width='10' fill='none'/><polygon points='96,40 140,140 52,140' stroke='%2300f0ff' stroke-width='6' fill='none'/><circle cx='96' cy='96' r='14' fill='%23ccff00'/></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='512' height='512' viewBox='0 0 512 512'><rect width='512' height='512' rx='96' fill='%23040508'/><circle cx='256' cy='256' r='160' stroke='%23ccff00' stroke-width='24' fill='none'/><polygon points='256,110 380,370 132,370' stroke='%2300f0ff' stroke-width='16' fill='none'/><circle cx='256' cy='256' r='36' fill='%23ccff00'/></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
+

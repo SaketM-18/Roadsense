@@ -60,11 +60,12 @@ def run_inference(file_path, model_path, data_processor=None):
         max_prob = proba[max_idx]
         predicted_class = class_labels[max_idx]
         
-        # If the model isn't confident enough, or it's already Normal, keep it Normal
-        if predicted_class == 'Normal' or max_prob < CONFIDENCE_THRESHOLD:
+        # If the model isn't confident enough, or it's already Normal (0 or 'Normal'), keep it Normal
+        is_normal = (predicted_class == 'Normal' or predicted_class == 0 or str(predicted_class).lower() == 'normal')
+        if is_normal or max_prob < CONFIDENCE_THRESHOLD:
             predictions.append('Normal')
         else:
-            predictions.append(predicted_class)
+            predictions.append('Pothole' if predicted_class == 1 else str(predicted_class))
     
     # Add predictions back to the dataframe
     df_features['prediction'] = predictions

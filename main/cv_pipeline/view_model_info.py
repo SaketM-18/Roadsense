@@ -1,9 +1,11 @@
+import os
 from ultralytics import YOLO
 import sys
 
 # Path to the model
-model_path = r'd:\Recovered_From_Sukee\Downloads\Saket\COLLEGE\Road Health\main\cv_pipeline\pothole_yolov8.pt'
-output_txt = r'd:\Recovered_From_Sukee\Downloads\Saket\COLLEGE\Road Health\main\cv_pipeline\model_summary.txt'
+current_dir = os.path.dirname(os.path.abspath(__file__))
+model_path = os.path.join(current_dir, 'pothole_yolov8.pt')
+output_txt = os.path.join(current_dir, 'model_summary.txt')
 
 print("Loading model...")
 model = YOLO(model_path)

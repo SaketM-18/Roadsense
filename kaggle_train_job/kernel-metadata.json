@@ -1,0 +1,18 @@
+{
+  "id": "saketmeda/roadsense-real-world-road-hazards-yolov8-training",
+  "title": "RoadSense Real-World Road Hazards YOLOv8 Training",
+  "code_file": "train_kaggle.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": "true",
+  "enable_gpu": "true",
+  "enable_tpu": "false",
+  "enable_internet": "true",
+  "dataset_sources": [
+    "anggadwisunarto/potholes-detection-yolov8",
+    "lorenzoarcioni/road-damage-dataset-potholes-cracks-and-manholes"
+  ],
+  "competition_sources": [],
+  "kernel_sources": [],
+  "model_sources": []
+}

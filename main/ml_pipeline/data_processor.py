@@ -81,15 +81,14 @@ class DataProcessor:
             np.array: Filtered signal containing only road impact frequencies.
         """
         nyquist = 0.5 * fs
-        low = self.low_cutoff / nyquist
-        high = self.high_cutoff / nyquist
-        
-        # Ensure cutoffs are valid (strictly between 0 and 1)
-        low = max(low, 0.01)
-        high = min(high, 0.99)
+        if nyquist <= self.low_cutoff:
+            low = 0.05
+            high = 0.85
+        else:
+            low = min(max(self.low_cutoff / nyquist, 0.01), 0.80)
+            high = min(self.high_cutoff / nyquist, 0.95)
         
         if low >= high:
-            # Fallback: if cutoffs are invalid, just return raw data
             return data
             
         b, a = butter(self.filter_order, [low, high], btype='band', analog=False)
@@ -98,56 +97,75 @@ class DataProcessor:
 
     def extract_features(self, window_data, fs):
         """
-        Extracts time-domain and frequency-domain features from a sliding window.
-        
-        UPGRADE (Research Paper): 
-        We now extract features from ONLY the bandpass-filtered Absolute Acceleration signal.
-        This is orientation-independent: sqrt(x^2 + y^2 + z^2).
-        No matter how the phone is mounted (tilted, sideways, upside down), 
-        a pothole impact will always produce the same feature values.
-
-        Features extracted:
-        - Mean: Central tendency of the filtered signal (should be near 0 after bandpass).
-        - Variance & Standard Deviation: Spread/energy of the signal. Higher = rougher road.
-        - Peak-to-Peak (Range): Max minus Min. Indicates severity of impact.
-        - RMS (Root Mean Square): Total energy of the signal in this window.
-        - Kurtosis: "Spikiness" of the distribution. Very high kurtosis = sharp pothole impact.
-        - Skewness: Asymmetry of the signal. Helps distinguish dips from rises.
-        - Dominant Frequency: The frequency with the most power (Welch's method).
-        - Spectral Energy: Total power in the frequency spectrum.
-
-        Args:
-            window_data (pd.DataFrame): Dataframe containing the window's data.
-            fs (float): Sampling rate.
-
-        Returns:
-            dict: Dictionary of extracted features.
+        Extracts physics-based time-domain and frequency-domain features from a sliding window.
+        Provides both v2 features (for road_health_rf_model_v2.pkl) and v1 features for backwards compatibility.
         """
         features = {}
         signal = window_data['abs_accel_filtered'].values
         
-        # Time-Domain Features
-        features['abs_mean'] = np.mean(signal)
-        features['abs_var'] = np.var(signal)
-        features['abs_std'] = np.std(signal)
-        features['abs_ptp'] = np.ptp(signal)  # Peak-to-peak (max - min)
-        features['abs_rms'] = np.sqrt(np.mean(signal**2))
-        features['abs_kurtosis'] = kurtosis(signal, fisher=True, bias=False)
-        features['abs_skew'] = skew(signal, bias=False)
-        features['abs_max'] = np.max(np.abs(signal))
-        
-        # Frequency-Domain Features (Welch's method)
-        # Welch's method estimates the power spectral density (PSD).
+        # Accelerometer time-domain
+        rms_a = float(np.sqrt(np.mean(signal**2)))
+        p2p_a = float(np.ptp(signal))
+        std_a = float(np.std(signal))
+        max_a = float(np.max(np.abs(signal)))
+        kurt_a = float(kurtosis(signal, fisher=True, bias=False)) if len(signal) > 3 else 0.0
+        skew_a = float(skew(signal, bias=False)) if len(signal) > 2 else 0.0
+        crest_a = max_a / (rms_a + 1e-6)
+        jerk_a = float(np.ptp(np.diff(signal))) * fs if len(signal) > 1 else 0.0
+
+        features['accel_rms'] = rms_a
+        features['accel_p2p'] = p2p_a
+        features['accel_std'] = std_a
+        features['accel_max'] = max_a
+        features['accel_kurt'] = kurt_a
+        features['accel_skew'] = skew_a
+        features['accel_crest'] = crest_a
+        features['accel_jerk'] = jerk_a
+
+        # Backwards compatible v1 names
+        features['abs_mean'] = float(np.mean(signal))
+        features['abs_var'] = float(np.var(signal))
+        features['abs_std'] = std_a
+        features['abs_ptp'] = p2p_a
+        features['abs_rms'] = rms_a
+        features['abs_kurtosis'] = kurt_a
+        features['abs_skew'] = skew_a
+        features['abs_max'] = max_a
+
+        # Gyroscope dynamics
+        if 'gyro_filtered' in window_data.columns:
+            sig_g = window_data['gyro_filtered'].values
+            features['gyro_rms'] = float(np.sqrt(np.mean(sig_g**2)))
+            features['gyro_p2p'] = float(np.ptp(sig_g))
+        else:
+            features['gyro_rms'] = 0.0
+            features['gyro_p2p'] = 0.0
+
+        # Frequency-domain (Welch Power Spectral Density)
         try:
-            nperseg = min(256, len(signal))
+            nperseg = min(32, len(signal))
             if nperseg < 4:
                 nperseg = len(signal)
-            f, Pxx = welch(signal, fs, nperseg=nperseg)
-            features['abs_dom_freq'] = f[np.argmax(Pxx)]
-            features['abs_spectral_energy'] = np.sum(Pxx)
-        except (ValueError, IndexError):
-            features['abs_dom_freq'] = 0.0
-            features['abs_spectral_energy'] = 0.0
+            f, pxx = welch(signal, fs, nperseg=nperseg)
+            low_band = float(np.sum(pxx[(f >= 1.0) & (f < 5.0)]))
+            mid_band = float(np.sum(pxx[(f >= 5.0) & (f <= 15.0)]))
+            high_band = float(np.sum(pxx[(f > 15.0)]))
+            band_ratio = mid_band / (low_band + 1e-6)
+            dom_freq = float(f[np.argmax(pxx)])
+            spec_energy = float(np.sum(pxx))
+        except Exception:
+            low_band, mid_band, high_band = 0.0, 0.0, 0.0
+            band_ratio = 1.0
+            dom_freq = 0.0
+            spec_energy = 0.0
+
+        features['spectral_low_e'] = low_band
+        features['spectral_mid_e'] = mid_band
+        features['spectral_high_e'] = high_band
+        features['spectral_band_ratio'] = band_ratio
+        features['spectral_dom_freq'] = dom_freq
+        features['abs_dom_freq'] = dom_freq
+        features['abs_spectral_energy'] = spec_energy
 
         return features
 
@@ -172,25 +190,37 @@ class DataProcessor:
         try:
             df = pd.read_csv(filepath)
             
-            # Basic validation
-            required_cols = ['Time (s)', 'Absolute acceleration (m/s^2)']
-            for col in required_cols:
-                if col not in df.columns:
-                    # Fallback: compute absolute acceleration from individual axes if the column is missing
-                    if col == 'Absolute acceleration (m/s^2)':
-                        axis_cols = ['Acceleration x (m/s^2)', 'Acceleration y (m/s^2)', 'Acceleration z (m/s^2)']
-                        if all(c in df.columns for c in axis_cols):
-                            df['Absolute acceleration (m/s^2)'] = np.sqrt(
-                                df['Acceleration x (m/s^2)']**2 + 
-                                df['Acceleration y (m/s^2)']**2 + 
-                                df['Acceleration z (m/s^2)']**2
-                            )
-                        else:
-                            print(f"Skipping {filepath}: Missing columns for absolute acceleration")
-                            return []
-                    else:
-                        print(f"Skipping {filepath}: Missing column {col}")
-                        return []
+            # Column normalization across Phyphox, Mobile survey app, and fused formats
+            if 'Time (s)' not in df.columns:
+                if 'time_s' in df.columns:
+                    df['Time (s)'] = df['time_s']
+                elif 'timestamp' in df.columns:
+                    df['Time (s)'] = (df['timestamp'] - df['timestamp'].min()) / 1000.0
+
+            if 'Absolute acceleration (m/s^2)' not in df.columns:
+                if 'abs_accel' in df.columns:
+                    df['Absolute acceleration (m/s^2)'] = df['abs_accel']
+                elif 'accel_dyn' in df.columns:
+                    df['Absolute acceleration (m/s^2)'] = df['accel_dyn']
+                elif all(c in df.columns for c in ['accel_x', 'accel_y', 'accel_z']):
+                    df['Absolute acceleration (m/s^2)'] = np.sqrt(df['accel_x']**2 + df['accel_y']**2 + df['accel_z']**2)
+                elif all(c in df.columns for c in ['Acceleration x (m/s^2)', 'Acceleration y (m/s^2)', 'Acceleration z (m/s^2)']):
+                    df['Absolute acceleration (m/s^2)'] = np.sqrt(
+                        df['Acceleration x (m/s^2)']**2 + 
+                        df['Acceleration y (m/s^2)']**2 + 
+                        df['Acceleration z (m/s^2)']**2
+                    )
+                elif 'accel_z' in df.columns:
+                    df['Absolute acceleration (m/s^2)'] = np.abs(df['accel_z'])
+                elif 'Acceleration z (m/s^2)' in df.columns:
+                    df['Absolute acceleration (m/s^2)'] = np.abs(df['Acceleration z (m/s^2)'])
+                else:
+                    print(f"Skipping {filepath}: Missing acceleration columns")
+                    return []
+                    
+            if 'Time (s)' not in df.columns:
+                print(f"Skipping {filepath}: Missing time column")
+                return []
                     
             df = df.dropna(subset=['Time (s)', 'Absolute acceleration (m/s^2)'])
             if len(df) < 10:
@@ -204,8 +234,21 @@ class DataProcessor:
                 df['Absolute acceleration (m/s^2)'].values, fs
             )
 
-            window_samples = int(self.window_size_sec * fs)
-            step_samples = int(window_samples * (1.0 - self.overlap_pct))
+            # Compute and filter Gyroscope if present
+            if 'gyro_y' in df.columns:
+                gyro_raw = np.abs(df['gyro_y'].fillna(0).values)
+            elif all(c in df.columns for c in ['gyro_alpha', 'gyro_beta', 'gyro_gamma']):
+                gyro_raw = np.sqrt(df['gyro_alpha'].fillna(0)**2 + df['gyro_beta'].fillna(0)**2 + df['gyro_gamma'].fillna(0)**2).values
+            else:
+                gyro_raw = np.zeros(len(df))
+
+            try:
+                df['gyro_filtered'] = self._butter_bandpass_filter(gyro_raw, fs)
+            except Exception:
+                df['gyro_filtered'] = gyro_raw
+
+            window_samples = max(4, int(self.window_size_sec * fs))
+            step_samples = max(2, int(window_samples * (1.0 - self.overlap_pct)))
             
             if window_samples <= 0 or step_samples <= 0:
                 return []

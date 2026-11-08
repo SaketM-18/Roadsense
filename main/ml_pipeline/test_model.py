@@ -10,13 +10,24 @@ from inference import run_inference
 def main():
     print("=== Road Health Model Tester ===")
     
-    # 1. Define the path to your new test file
-    # I found the file in your 'test' folder!
-    base_dir = r"d:\Recovered_From_Sukee\Downloads\Saket\COLLEGE\Road Health"
-    test_file = os.path.join(base_dir, r"test\Acceleration with g 2026-06-22 19-05-32\Raw Data.csv")
+    # 1. Define the path to test file dynamically
+    ml_dir = os.path.dirname(os.path.abspath(__file__))
+    main_dir = os.path.dirname(ml_dir)
+    test_dir = os.path.join(main_dir, "test")
     
-    # 2. Define the path to the Brain (the saved .pkl model)
-    model_path = os.path.join(base_dir, r"ml_pipeline\road_health_rf_model.pkl")
+    test_file = None
+    for folder_name in ["Four", "one", "two", "Five", "Three"]:
+        candidate_dir = os.path.join(test_dir, folder_name)
+        if os.path.exists(candidate_dir):
+            csvs = [os.path.join(candidate_dir, f) for f in os.listdir(candidate_dir) if f.startswith("roadsense_raw_") and f.endswith(".csv")]
+            if csvs:
+                test_file = csvs[0]
+                break
+    
+    # 2. Define the path to the model (prefer v2 ensemble)
+    model_path = os.path.join(ml_dir, "road_health_rf_model_v2.pkl")
+    if not os.path.exists(model_path):
+        model_path = os.path.join(ml_dir, "road_health_rf_model.pkl")
 
     # 3. Create a fresh DataProcessor (UPGRADED: Bandpass + Absolute Acceleration)
     processor = DataProcessor(

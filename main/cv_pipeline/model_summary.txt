@@ -2,7 +2,7 @@
 YOLOv8 POTHOLE DETECTION MODEL - ARCHITECTURE INFO
 ==================================================
 
-Model File: d:\Recovered_From_Sukee\Downloads\Saket\COLLEGE\Road Health\main\cv_pipeline\pothole_yolov8.pt
+Model File: D:\Recovered_From_Sukee\Downloads\Saket\COLLEGE\RoadSense\main\cv_pipeline\pothole_yolov8.pt
 Task type: detect
 Model Names (Classes): {0: 'pothole'}
 DetectionModel(

@@ -1,8 +1,10 @@
 import cv2, os, numpy as np
 from ultralytics import YOLO
 
-base = r'd:\Recovered_From_Sukee\Downloads\Saket\COLLEGE\Road Health'
-model = YOLO(os.path.join(base, r'cv_pipeline\pothole_yolov8.pt'))
+current_dir = os.path.dirname(os.path.abspath(__file__))
+base = os.path.dirname(os.path.dirname(current_dir))
+model_path = os.path.join(current_dir, 'pothole_yolov8.pt')
+model = YOLO(model_path)
 
 timestamps = [8.0, 30.0, 55.0, 72.0, 89.0, 116.0]
 out_dir = os.path.join(base, 'Videos', 'stabilized_frames')
