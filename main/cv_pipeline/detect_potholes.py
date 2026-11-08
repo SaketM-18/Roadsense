@@ -308,7 +308,9 @@ if __name__ == "__main__":
             test_video = cand
             break
             
-    my_model = os.path.join(current_dir, "pothole_yolov8.pt")
+    seg_model = os.path.join(current_dir, "pothole_yolo11_seg.pt")
+    v8_model = os.path.join(current_dir, "pothole_yolov8.pt")
+    my_model = seg_model if os.path.exists(seg_model) else v8_model
     out_csv = os.path.join(current_dir, "yolo_timestamps.csv")
     
     if test_video and os.path.exists(my_model):

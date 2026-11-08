@@ -29,12 +29,11 @@ from scipy.signal import butter, filtfilt
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
-MODEL_FILE = os.path.join(BASE_DIR, 'cv_pipeline', 'pothole_yolov8.pt')
-if not os.path.exists(MODEL_FILE):
-    # Fallback to yolov8n if customized model not found
-    fallback = os.path.join(BASE_DIR, 'yolov8n.pt')
-    if os.path.exists(fallback):
-        MODEL_FILE = fallback
+
+# Model selection: prefer newly trained YOLO11 segmentation, fallback to v8
+SEG_MODEL = os.path.join(BASE_DIR, 'cv_pipeline', 'pothole_yolo11_seg.pt')
+V8_MODEL = os.path.join(BASE_DIR, 'cv_pipeline', 'pothole_yolov8.pt')
+MODEL_FILE = SEG_MODEL if os.path.exists(SEG_MODEL) else V8_MODEL
 MASTER_CSV = os.path.join(BASE_DIR, 'cv_pipeline', 'master_training_data.csv')
 
 
