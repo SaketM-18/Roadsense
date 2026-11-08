@@ -207,21 +207,40 @@ def fuse_sensor_and_vision_data(
                 calculated_delay = default_delay_sec
 
             impact_t = aligned_t + calculated_delay
-            window_mask = (df_sensor['time_s'] >= impact_t - 0.25) & (df_sensor['time_s'] <= impact_t + 0.25)
+            window_mask = (df_sensor['time_s'] >= impact_t - 0.35) & (df_sensor['time_s'] <= impact_t + 0.35)
             
-            if window_mask.sum() == 0:
-                continue
+            if window_mask.sum() == 0 and len(df_sensor) > 0:
+                closest_idx = (df_sensor['time_s'] - impact_t).abs().idxmin()
+                target_indices = [closest_idx]
+            else:
+                target_indices = df_sensor[window_mask].index.tolist()
 
-            max_z = df_sensor.loc[window_mask, 'z_score'].max()
-            max_jerk = df_sensor.loc[window_mask, 'jerk'].max()
+            max_z = df_sensor.loc[target_indices, 'z_score'].max() if len(target_indices) > 0 and 'z_score' in df_sensor.columns else 0.0
+            max_jerk = df_sensor.loc[target_indices, 'jerk'].max() if len(target_indices) > 0 and 'jerk' in df_sensor.columns else 0.0
 
-            # Physical Verification: Vision must correlate with physical shock spike
+            has_telemetry_sensor = (
+                ('accel_z' in df_sensor.columns or 'accel_dyn' in df_sensor.columns)
+                and (df_sensor['z_score'].max() > 0.0 or df_sensor['jerk'].max() > 0.0)
+            )
+
+            # Physical Verification:
+            # 1. FUSED: Vision correlates with physical chassis shock spike
             if max_z >= 1.5 or max_jerk >= 50.0:
-                df_sensor.loc[window_mask, 'Label'] = 1
-                df_sensor.loc[window_mask, 'Source'] = 'Fused'
-                df_sensor.loc[window_mask, 'Hazard_Type'] = 'Pothole'
-                if area_pct > 0:
-                    df_sensor.loc[window_mask, 'box_area_pct'] = area_pct
+                for idx in target_indices:
+                    df_sensor.at[idx, 'Label'] = 1
+                    df_sensor.at[idx, 'Source'] = 'Fused'
+                    df_sensor.at[idx, 'Hazard_Type'] = 'Pothole'
+                    if area_pct > 0:
+                        df_sensor.at[idx, 'box_area_pct'] = max(float(df_sensor.at[idx, 'box_area_pct']), area_pct)
+                verified_yolo += 1
+            # 2. VISION: Telemetry absent (GPS-only) or vehicle swerved/crawled, but camera tracked pothole
+            elif (not has_telemetry_sensor) or conf >= 0.60:
+                for idx in target_indices:
+                    df_sensor.at[idx, 'Label'] = 1
+                    df_sensor.at[idx, 'Source'] = 'Vision'
+                    df_sensor.at[idx, 'Hazard_Type'] = 'Pothole'
+                    if area_pct > 0:
+                        df_sensor.at[idx, 'box_area_pct'] = max(float(df_sensor.at[idx, 'box_area_pct']), area_pct)
                 verified_yolo += 1
             else:
                 # Rejected! Road was physically smooth (false alarm from shadow/paint)
@@ -258,17 +277,28 @@ def fuse_sensor_and_vision_data(
         if row['Label'] == 1:
             z = float(row['z_score'])
             area_pct = float(row.get('box_area_pct', 0.0))
+            source = str(row.get('Source', 'None'))
             
-            if z >= 3.0:
-                df_sensor.at[idx, 'Severity'] = 'Severe'
-            elif z >= 2.0:
-                df_sensor.at[idx, 'Severity'] = 'Moderate'
+            if source == 'Vision' or z < 1.0:
+                if area_pct >= 10.0:
+                    df_sensor.at[idx, 'Severity'] = 'Severe'
+                elif area_pct >= 3.0:
+                    df_sensor.at[idx, 'Severity'] = 'Moderate'
+                else:
+                    df_sensor.at[idx, 'Severity'] = 'Low'
             else:
-                df_sensor.at[idx, 'Severity'] = 'Low'
+                if z >= 3.0:
+                    df_sensor.at[idx, 'Severity'] = 'Severe'
+                elif z >= 2.0:
+                    df_sensor.at[idx, 'Severity'] = 'Moderate'
+                else:
+                    df_sensor.at[idx, 'Severity'] = 'Low'
                 
             # Dimensional modeling
-            df_sensor.at[idx, 'est_area_cm2'] = round(max(150.0, area_pct * 140.0), 1) if area_pct > 0 else round(max(100.0, z * 180.0), 1)
-            df_sensor.at[idx, 'est_depth_cm'] = round(min(12.0, max(1.5, z * 1.65)), 1)
+            area_cm2 = round(max(150.0, area_pct * 140.0), 1) if area_pct > 0 else round(max(100.0, max(z, 1.0) * 180.0), 1)
+            depth_cm = round(min(12.0, max(2.5, max(z, 1.0) * 1.65)), 1)
+            df_sensor.at[idx, 'est_area_cm2'] = area_cm2
+            df_sensor.at[idx, 'est_depth_cm'] = depth_cm
 
     # Save labeled dataset
     os.makedirs(os.path.dirname(os.path.abspath(output_csv)), exist_ok=True)

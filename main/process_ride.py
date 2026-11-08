@@ -481,13 +481,20 @@ def fuse_data(detections, csv_path, output_path, lookahead_distance_m=3.5, defau
                     std_z = profile[bin_label]['std']
                     df.at[idx, 'z_score'] = abs(row['accel_z'] - mean_z) / (std_z + 1e-6)
 
-    # 2. Camera Verification (The Dynamic AND Gate)
+    # 2. Camera Verification & Multi-Modal Gating (Tri-Modal: Fused, Vision, Sensor)
+    has_telemetry_sensor = (
+        ('accel_z' in df.columns or 'accel_dyn' in df.columns)
+        and (df['z_score'].max() > 0.0 or df['jerk'].max() > 0.0)
+    )
+
     verified_yolo_detections = 0
     ignored_yolo_detections = 0
     for det in detections:
         t = det['time_sec'] if isinstance(det, dict) else det[0]
         snap = det.get('snapshot') if isinstance(det, dict) else None
         area = det.get('box_area_pct', 0.0) if isinstance(det, dict) else 0.0
+        conf = det.get('conf', 0.5) if isinstance(det, dict) else 0.5
+        hits = det.get('hits', 1) if isinstance(det, dict) else 1
         
         # Dynamic delay based on vehicle speed at timestamp t
         speed_window = df[(df['time_s'] >= t - 0.5) & (df['time_s'] <= t + 0.5)]
@@ -498,23 +505,44 @@ def fuse_data(detections, csv_path, output_path, lookahead_distance_m=3.5, defau
             calculated_delay = default_delay
             
         impact_time = t + calculated_delay
-        mask = (df['time_s'] >= impact_time - 0.25) & (df['time_s'] <= impact_time + 0.25)
+        mask = (df['time_s'] >= impact_time - 0.35) & (df['time_s'] <= impact_time + 0.35)
         
-        max_z = df.loc[mask, 'z_score'].max() if mask.sum() > 0 and 'z_score' in df.columns else 0.0
-        max_jerk = df.loc[mask, 'jerk'].max() if mask.sum() > 0 and 'jerk' in df.columns else 0.0
+        if mask.sum() == 0 and len(df) > 0:
+            closest_idx = (df['time_s'] - impact_time).abs().idxmin()
+            target_indices = [closest_idx]
+        else:
+            target_indices = df[mask].index.tolist()
         
+        max_z = df.loc[target_indices, 'z_score'].max() if len(target_indices) > 0 and 'z_score' in df.columns else 0.0
+        max_jerk = df.loc[target_indices, 'jerk'].max() if len(target_indices) > 0 and 'jerk' in df.columns else 0.0
+        
+        # 1. Fused Verification: Camera saw it AND vehicle wheel registered an impact shock spike
         if max_z > 1.5 or max_jerk >= 50.0:
-            # Verified! The camera saw it AND the sensor felt at least a mild bump or sharp jerk
-            df.loc[mask, 'Label'] = 1
-            df.loc[mask, 'Source'] = 'Fused'
-            df.loc[mask, 'Hazard_Type'] = 'Pothole'
-            if snap:
-                df.loc[mask, 'image_evidence'] = snap
-            if area > 0:
-                df.loc[mask, 'box_area_pct'] = area
+            for idx in target_indices:
+                df.at[idx, 'Label'] = 1
+                df.at[idx, 'Source'] = 'Fused'
+                df.at[idx, 'Hazard_Type'] = 'Pothole'
+                if snap:
+                    df.at[idx, 'image_evidence'] = snap
+                if area > 0:
+                    df.at[idx, 'box_area_pct'] = max(float(df.at[idx, 'box_area_pct']), area)
+            verified_yolo_detections += 1
+        # 2. Vision Ground Truth:
+        # Either sensor telemetry is absent in this ride (GPS-only recording),
+        # OR vehicle avoided/straddled the pothole or crawled at very low speed,
+        # BUT the camera temporally tracked the defect across frames
+        elif (not has_telemetry_sensor) or (hits >= 2) or (conf >= 0.60):
+            for idx in target_indices:
+                df.at[idx, 'Label'] = 1
+                df.at[idx, 'Source'] = 'Vision'
+                df.at[idx, 'Hazard_Type'] = 'Pothole'
+                if snap:
+                    df.at[idx, 'image_evidence'] = snap
+                if area > 0:
+                    df.at[idx, 'box_area_pct'] = max(float(df.at[idx, 'box_area_pct']), area)
             verified_yolo_detections += 1
         else:
-            # Rejected! Camera saw it, but road was physically smooth (False Positive)
+            # Single-frame weak detection on a confirmed smooth road with active sensor
             ignored_yolo_detections += 1
             
     if len(detections) > 0:
@@ -552,17 +580,27 @@ def fuse_data(detections, csv_path, output_path, lookahead_distance_m=3.5, defau
         if row['Label'] == 1:
             z = float(row.get('z_score', 0.0))
             area_pct = float(row.get('box_area_pct', 0.0))
+            source = str(row.get('Source', 'None'))
             
-            if z >= 3.0:
-                df.at[idx, 'Severity'] = 'Severe'
-            elif z >= 2.0:
-                df.at[idx, 'Severity'] = 'Moderate'
+            # Severity grading: Use shock if available, or visual contour area if Vision-only
+            if source == 'Vision' or z < 1.0:
+                if area_pct >= 10.0:
+                    df.at[idx, 'Severity'] = 'Severe'
+                elif area_pct >= 3.0:
+                    df.at[idx, 'Severity'] = 'Moderate'
+                else:
+                    df.at[idx, 'Severity'] = 'Low'
             else:
-                df.at[idx, 'Severity'] = 'Low'
+                if z >= 3.0:
+                    df.at[idx, 'Severity'] = 'Severe'
+                elif z >= 2.0:
+                    df.at[idx, 'Severity'] = 'Moderate'
+                else:
+                    df.at[idx, 'Severity'] = 'Low'
                 
             # Dimensional modeling (physical surface area in cm² & depth in cm)
-            area_cm2 = round(max(150.0, area_pct * 140.0), 1) if area_pct > 0 else round(max(100.0, z * 180.0), 1)
-            depth_cm = round(min(12.0, max(1.5, z * 1.65)), 1)
+            area_cm2 = round(max(150.0, area_pct * 140.0), 1) if area_pct > 0 else round(max(100.0, max(z, 1.0) * 180.0), 1)
+            depth_cm = round(min(12.0, max(2.5, max(z, 1.0) * 1.65)), 1)
             
             # Parabolic cavity volume: V = 0.5 * Area * Depth * 10^-3 Liters
             vol_liters = round(0.5 * area_cm2 * depth_cm * 0.001, 2)
