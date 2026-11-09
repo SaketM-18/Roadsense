@@ -1,31 +1,80 @@
-timestamp,latitude,longitude,z_score,Severity,Hazard_Type,est_area_cm2,est_depth_cm,image_evidence
-1783856930653,12.9156867,77.5523167,0.0,Moderate,Pothole,449.7,2.5,evidence_002s_1.jpg
-1783856933153,12.91565,77.5523133,0.0,Low,Pothole,150.0,2.5,evidence_004s_2.jpg
-1783856933653,12.91565,77.5523133,0.0,Low,Pothole,150.0,2.5,evidence_004s_2.jpg
-1783856934153,12.9156483,77.5523367,0.0,Low,Pothole,150.0,2.5,evidence_005s_3.jpg
-1783856934653,12.9156483,77.5523367,0.0,Low,Pothole,150.0,2.5,evidence_005s_3.jpg
-1783856935652,12.9156533,77.5523433,0.0,Moderate,Pothole,878.4,2.5,evidence_007s_4.jpg
-1783856936152,12.9156667,77.5523617,0.0,Moderate,Pothole,878.4,2.5,evidence_007s_4.jpg
-1783856948652,12.9161417,77.552585,0.0,Severe,Pothole,2184.3,2.5,evidence_020s_5.jpg
-1783856949153,12.9161967,77.5525917,0.0,Severe,Pothole,2184.3,2.5,evidence_020s_5.jpg
-1783856955153,12.9165367,77.552615,0.0,Moderate,Pothole,958.2,2.5,evidence_026s_6.jpg
-1783856966153,12.91719,77.55265,0.0,Severe,Pothole,1899.2,2.5,evidence_037s_7.jpg
-1783856977653,12.917745,77.5527083,0.0,Moderate,Pothole,1258.7,2.5,evidence_048s_8.jpg
-1783856978153,12.9177483,77.552735,0.0,Severe,Pothole,1696.2,2.5,evidence_049s_9.jpg
-1783856988653,12.91759,77.553415,0.0,Severe,Pothole,1431.2,2.5,evidence_059s_10.jpg
-1783856991653,12.9175967,77.5535283,0.0,Severe,Pothole,3087.4,2.5,evidence_063s_11.jpg
-1783856992153,12.9176517,77.553575,0.0,Severe,Pothole,3087.4,2.5,evidence_063s_11.jpg
-1783857006653,12.9178133,77.55382,0.0,Severe,Pothole,3762.2,2.5,evidence_077s_12.jpg
-1783857009153,12.9177567,77.55399,0.0,Moderate,Pothole,670.9,2.5,evidence_080s_13.jpg
-1783857014153,12.9178067,77.5542133,0.0,Severe,Pothole,2697.8,2.5,evidence_085s_14.jpg
-1783857016653,12.9179367,77.5542783,0.0,Moderate,Pothole,1065.7,2.5,evidence_088s_15.jpg
-1783857018152,12.9180633,77.554325,0.0,Moderate,Pothole,1061.2,2.5,evidence_089s_16.jpg
-1783857018653,12.9180633,77.554325,0.0,Moderate,Pothole,1061.2,2.5,evidence_089s_16.jpg
-1783857029152,12.9185317,77.5544833,0.0,Moderate,Pothole,1291.9,2.5,evidence_100s_17.jpg
-1783857029653,12.9185317,77.5544833,0.0,Moderate,Pothole,1291.9,2.5,evidence_100s_17.jpg
-1783857035153,12.918555,77.55451,0.0,Severe,Pothole,3922.7,2.5,evidence_106s_18.jpg
-1783857035653,12.918555,77.55451,0.0,Severe,Pothole,3922.7,2.5,evidence_106s_18.jpg
-1783857036153,12.9185717,77.5545183,0.0,Severe,Pothole,3496.5,2.5,evidence_107s_19.jpg
-1783857036653,12.9185717,77.5545183,0.0,Severe,Pothole,3496.5,2.5,evidence_107s_19.jpg
-1783857041653,12.918825,77.554665,0.0,Low,Pothole,150.0,2.5,evidence_113s_20.jpg
-1783857042153,12.9189,77.554695,0.0,Low,Pothole,150.0,2.5,evidence_113s_20.jpg
+timestamp,latitude,longitude,z_score,Severity,Hazard_Type,est_area_cm2,est_depth_cm,asphalt_mass_kg,repair_cost_inr,irc_category,irc_code,irc_action,image_evidence
+1783856929653,12.9157826,77.552514,0.0,Moderate,Pothole,5514.9,3.4,22.04,1292,Category B (Standard Pothole Cavity),IRC:SP:77-Clause 4.1,"Square cut, edge priming & Cold-Mix Bituminous Patching",evidence_001s_2.jpg
+1783856930152,12.9157826,77.552514,0.0,Moderate,Pothole,5514.9,3.4,22.04,1292,Category B (Standard Pothole Cavity),IRC:SP:77-Clause 4.1,"Square cut, edge priming & Cold-Mix Bituminous Patching",evidence_001s_2.jpg
+1783856930653,12.9156867,77.5523167,0.0,Severe,Pothole,25000.0,3.4,99.88,4795,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",evidence_002s_3.jpg
+1783856931153,12.9156483,77.5523333,0.0,Severe,Pothole,25000.0,3.4,99.88,4795,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",evidence_002s_4.jpg
+1783856931653,12.9156483,77.5523333,0.0,Severe,Pothole,25000.0,3.4,99.88,4795,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",evidence_002s_4.jpg
+1783856933153,12.91565,77.5523133,0.0,Low,Pothole,15707.6,3.4,62.74,3123,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",evidence_004s_5.jpg
+1783856935652,12.9156533,77.5523433,0.0,Severe,Pothole,25000.0,3.4,99.88,4795,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",evidence_007s_6.jpg
+1783856938652,12.91572,77.5524167,0.0,Moderate,Pothole,21006.6,3.4,83.92,4076,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",evidence_010s_7.jpg
+1783856939153,12.9157667,77.552445,0.0,Moderate,Pothole,21006.6,3.4,83.92,4076,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",evidence_010s_7.jpg
+1783856942153,12.9159017,77.5525217,0.0,Severe,Pothole,25000.0,3.4,99.88,4795,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",evidence_013s_8.jpg
+1783856942653,12.9159017,77.5525217,0.0,Severe,Pothole,25000.0,3.4,99.88,4795,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",evidence_013s_8.jpg
+1783856943653,12.9159017,77.5525217,0.0,Severe,Pothole,25000.0,3.4,99.88,4795,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",evidence_015s_9.jpg
+1783856944653,12.9160083,77.552555,0.0,Severe,Pothole,25000.0,3.4,99.88,4795,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",evidence_016s_10.jpg
+1783856946653,12.9160567,77.552575,0.0,Severe,Pothole,25000.0,3.4,99.88,4795,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",evidence_018s_11.jpg
+1783856950653,12.9162483,77.5525917,0.0,Severe,Pothole,25000.0,3.4,99.88,4795,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",evidence_022s_12.jpg
+1783856953652,12.9164283,77.552625,0.0,Severe,Pothole,25000.0,3.4,99.88,4795,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",evidence_024s_13.jpg
+1783856956153,12.91659,77.5526133,0.0,Severe,Pothole,25000.0,3.4,99.88,4795,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",evidence_027s_14.jpg
+1783856962152,12.9169067,77.5526283,0.0,Severe,Pothole,22803.0,3.4,91.11,4400,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",evidence_033s_16.jpg
+1783856963153,12.9169583,77.5526267,0.0,Severe,Pothole,25000.0,3.4,99.88,4795,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",evidence_034s_17.jpg
+1783856963653,12.9169583,77.5526267,0.0,Severe,Pothole,25000.0,3.4,99.88,4795,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",evidence_034s_17.jpg
+1783856965653,12.9171167,77.55264,0.0,Severe,Pothole,24165.5,3.4,96.54,4644,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",evidence_037s_18.jpg
+1783856966153,12.91719,77.55265,0.0,Severe,Pothole,25000.0,3.4,99.88,4795,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",evidence_037s_19.jpg
+1783856967152,12.9172633,77.5526667,0.0,Severe,Pothole,25000.0,3.4,99.88,4795,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",evidence_038s_20.jpg
+1783856968153,12.9173283,77.5526767,0.0,Severe,Pothole,25000.0,3.4,99.88,4795,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",evidence_039s_21.jpg
+1783856972153,12.9175683,77.5526933,0.0,Severe,Pothole,25000.0,3.4,99.88,4795,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",evidence_043s_22.jpg
+1783856974153,12.917665,77.5527033,0.0,Low,Pothole,25000.0,3.4,99.88,4795,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",evidence_045s_23.jpg
+1783856975153,12.9176983,77.5527067,0.0,Low,Pothole,15521.2,3.4,62.02,3091,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",evidence_046s_24.jpg
+1783856977153,12.917745,77.5527083,0.0,Severe,Pothole,25000.0,3.4,99.88,4795,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",evidence_048s_25.jpg
+1783856977653,12.917745,77.5527083,0.0,Moderate,Pothole,25000.0,3.4,99.88,4795,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",
+1783856978153,12.9177483,77.552735,0.0,Severe,Pothole,25000.0,3.4,99.88,4795,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",
+1783856980153,12.9177567,77.5528167,0.0,Severe,Pothole,25000.0,3.4,99.88,4795,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",
+1783856982153,12.91773,77.5529383,0.0,Severe,Pothole,25000.0,3.4,99.88,4795,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",
+1783856988153,12.91759,77.553415,0.0,Severe,Pothole,25000.0,3.4,99.88,4795,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",
+1783856988653,12.91759,77.553415,0.0,Severe,Pothole,25000.0,3.4,99.88,4795,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",
+1783856998653,12.9178483,77.5536967,0.0,Severe,Pothole,25000.0,3.4,99.88,4795,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",
+1783856999153,12.917855,77.5537,0.0,Severe,Pothole,25000.0,3.4,99.88,4795,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",
+1783856999653,12.917855,77.5537,0.0,Severe,Pothole,25000.0,3.4,99.88,4795,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",
+1783857000153,12.9178467,77.55371,0.0,Severe,Pothole,25000.0,3.4,99.88,4795,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",
+1783857003653,12.917835,77.5537217,0.0,Severe,Pothole,25000.0,3.4,99.88,4795,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",
+1783857006153,12.9178133,77.55382,0.0,Severe,Pothole,25000.0,3.4,99.88,4795,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",
+1783857006653,12.9178133,77.55382,0.0,Severe,Pothole,25000.0,3.4,99.88,4795,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",
+1783857008153,12.917785,77.55393,0.0,Severe,Pothole,25000.0,3.4,99.88,4795,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",
+1783857008653,12.917785,77.55393,0.0,Severe,Pothole,25000.0,3.4,99.88,4795,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",
+1783857009153,12.9177567,77.55399,0.0,Severe,Pothole,25000.0,3.4,99.88,4795,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",
+1783857012153,12.9177217,77.554135,0.0,Severe,Pothole,25000.0,3.4,99.88,4795,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",
+1783857012653,12.9177217,77.554135,0.0,Severe,Pothole,25000.0,3.4,99.88,4795,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",
+1783857013653,12.917755,77.5541717,0.0,Severe,Pothole,25000.0,3.4,99.88,4795,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",
+1783857014653,12.9178067,77.5542133,0.0,Moderate,Pothole,25000.0,3.4,99.88,4795,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",
+1783857017653,12.918,77.5543017,0.0,Moderate,Pothole,25000.0,3.4,99.88,4795,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",
+1783857018152,12.9180633,77.554325,0.0,Moderate,Pothole,25000.0,3.4,99.88,4795,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",
+1783857020153,12.918195,77.554395,0.0,Severe,Pothole,25000.0,3.4,99.88,4795,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",
+1783857021153,12.9182583,77.5544217,0.0,Severe,Pothole,25000.0,3.4,99.88,4795,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",
+1783857021653,12.9182583,77.5544217,0.0,Moderate,Pothole,25000.0,3.4,99.88,4795,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",
+1783857022153,12.91832,77.5544417,0.0,Moderate,Pothole,25000.0,3.4,99.88,4795,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",
+1783857022652,12.91832,77.5544417,0.0,Severe,Pothole,25000.0,3.4,99.88,4795,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",
+1783857026153,12.9185033,77.5544717,0.0,Severe,Pothole,25000.0,3.4,99.88,4795,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",
+1783857027153,12.91852,77.5544717,0.0,Moderate,Pothole,24957.2,3.4,99.71,4787,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",
+1783857029152,12.9185317,77.5544833,0.0,Moderate,Pothole,22863.3,3.4,91.34,4410,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",
+1783857030653,12.9185267,77.5544867,0.0,Low,Pothole,1175.8,3.4,4.7,512,Category B (Standard Pothole Cavity),IRC:SP:77-Clause 4.1,"Square cut, edge priming & Cold-Mix Bituminous Patching",
+1783857031653,12.9185267,77.554485,0.0,Low,Pothole,1107.4,3.4,4.42,499,Category B (Standard Pothole Cavity),IRC:SP:77-Clause 4.1,"Square cut, edge priming & Cold-Mix Bituminous Patching",
+1783857033153,12.9185317,77.5544917,0.0,Low,Pothole,1030.6,3.4,4.11,485,Category B (Standard Pothole Cavity),IRC:SP:77-Clause 4.1,"Square cut, edge priming & Cold-Mix Bituminous Patching",
+1783857035153,12.918555,77.55451,0.0,Severe,Pothole,25000.0,3.4,99.88,4795,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",
+1783857035653,12.918555,77.55451,0.0,Severe,Pothole,25000.0,3.4,99.88,4795,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",
+1783857036153,12.9185717,77.5545183,0.0,Low,Pothole,1557.1,3.4,6.23,580,Category B (Standard Pothole Cavity),IRC:SP:77-Clause 4.1,"Square cut, edge priming & Cold-Mix Bituminous Patching",
+1783857036653,12.9185717,77.5545183,0.0,Low,Pothole,1557.1,3.4,6.23,580,Category B (Standard Pothole Cavity),IRC:SP:77-Clause 4.1,"Square cut, edge priming & Cold-Mix Bituminous Patching",
+1783857039153,12.9186967,77.5546017,0.0,Low,Pothole,4830.6,3.4,19.29,1168,Category B (Standard Pothole Cavity),IRC:SP:77-Clause 4.1,"Square cut, edge priming & Cold-Mix Bituminous Patching",
+1783857039652,12.9186967,77.5546017,0.0,Severe,Pothole,25000.0,3.4,99.88,4795,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",
+1783857040653,12.9187617,77.554635,0.0,Severe,Pothole,25000.0,3.4,99.88,4795,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",
+1783857041153,12.918825,77.554665,0.0,Severe,Pothole,853.6,3.4,3.41,453,Category B (Standard Pothole Cavity),IRC:SP:77-Clause 4.1,"Square cut, edge priming & Cold-Mix Bituminous Patching",
+1783857041653,12.918825,77.554665,0.0,Low,Pothole,9797.5,3.4,39.15,2062,Category B (Standard Pothole Cavity),IRC:SP:77-Clause 4.1,"Square cut, edge priming & Cold-Mix Bituminous Patching",
+1783857042153,12.9189,77.554695,0.0,Low,Pothole,9797.5,3.4,39.15,2062,Category B (Standard Pothole Cavity),IRC:SP:77-Clause 4.1,"Square cut, edge priming & Cold-Mix Bituminous Patching",
+1783857042653,12.9189,77.554695,0.0,Severe,Pothole,25000.0,3.4,99.88,4795,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",
+1783857045653,12.9191333,77.55478,0.0,Moderate,Pothole,25000.0,3.4,99.88,4795,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",
+1783857046153,12.9192333,77.55479,0.0,Moderate,Pothole,25000.0,3.4,99.88,4795,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",
+1783857049653,12.919475,77.5548133,0.0,Low,Pothole,451.2,3.4,1.81,381,Category B (Standard Pothole Cavity),IRC:SP:77-Clause 4.1,"Square cut, edge priming & Cold-Mix Bituminous Patching",
+1783857050152,12.9195333,77.5548083,0.0,Severe,Pothole,25000.0,3.4,99.88,4795,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",
+1783857050653,12.9195333,77.5548083,0.0,Severe,Pothole,25000.0,3.4,99.88,4795,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",
+1783857051653,12.9195817,77.5548083,0.0,Severe,Pothole,25000.0,3.4,99.88,4795,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",
+1783857052652,12.9196017,77.554815,0.0,Severe,Pothole,25000.0,3.4,99.88,4795,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",

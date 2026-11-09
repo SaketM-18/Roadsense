@@ -2,8 +2,8 @@
   "type": "FeatureCollection",
   "metadata": {
     "generated_by": "RoadSense Spatial Clustering Engine",
-    "total_raw_detections": 493,
-    "canonical_hazards": 41,
+    "total_raw_detections": 476,
+    "canonical_hazards": 45,
     "eps_meters": 8.0
   },
   "features": [
@@ -12,14 +12,14 @@
       "geometry": {
         "type": "Point",
         "coordinates": [
-          77.5016041,
-          12.9223968
+          77.5016006,
+          12.9223976
         ]
       },
       "properties": {
         "cluster_id": 0,
-        "centroid_lat": 12.9223968,
-        "centroid_lon": 77.5016041,
+        "centroid_lat": 12.9223976,
+        "centroid_lon": 77.5016006,
         "hazard_type": "Pothole",
         "severity": "Severe",
         "confidence": "Medium (Strong Single-Ride Impact)",
@@ -28,21 +28,21 @@
         "priority": "P1 (Urgent Dispatch)",
         "repair_status": "Pending Emergency Repair",
         "action_recommendation": "Emergency Cold-mix Patching & Compaction",
-        "est_area_cm2": 1047.4333333333334,
-        "est_depth_cm": 3.9500000000000006,
-        "asphalt_volume_liters": 2.07,
-        "asphalt_mass_kg": 4.86,
-        "repair_cost_inr": 519,
-        "repair_cost_usd": 15.0,
-        "total_hits": 6,
+        "est_area_cm2": 2282.55,
+        "est_depth_cm": 4.75,
+        "asphalt_volume_liters": 5.42,
+        "asphalt_mass_kg": 12.74,
+        "repair_cost_inr": 873,
+        "repair_cost_usd": 18.28,
+        "total_hits": 4,
         "unique_rides": 1,
         "max_z_score": 5.32,
-        "avg_z_score": 1.88,
+        "avg_z_score": 2.05,
         "contributing_rides": [
           "Five"
         ],
         "deterioration_count": 1,
-        "last_revisit_at": "2026-11-09T00:43:37.231722",
+        "last_revisit_at": "2026-11-10T00:43:24.819171",
         "last_measured_z": 5.32
       }
     },
@@ -51,14 +51,14 @@
       "geometry": {
         "type": "Point",
         "coordinates": [
-          77.55478510888888,
-          12.919540711111111
+          77.5547848488372,
+          12.91955131395349
         ]
       },
       "properties": {
         "cluster_id": 1,
-        "centroid_lat": 12.919540711111111,
-        "centroid_lon": 77.55478510888888,
+        "centroid_lat": 12.91955131395349,
+        "centroid_lon": 77.5547848488372,
         "hazard_type": "Pothole",
         "severity": "Severe",
         "confidence": "High (Multi-Ride Consensus)",
@@ -67,16 +67,16 @@
         "priority": "P1 (Urgent Dispatch)",
         "repair_status": "Pending Emergency Repair",
         "action_recommendation": "Emergency Cold-mix Patching & Compaction",
-        "est_area_cm2": 2039.762222222222,
-        "est_depth_cm": 2.78,
-        "asphalt_volume_liters": 2.84,
-        "asphalt_mass_kg": 6.67,
-        "repair_cost_inr": 600,
-        "repair_cost_usd": 15.0,
-        "total_hits": 45,
+        "est_area_cm2": 19508.662790697676,
+        "est_depth_cm": 3.593023255813954,
+        "asphalt_volume_liters": 35.05,
+        "asphalt_mass_kg": 82.37,
+        "repair_cost_inr": 4007,
+        "repair_cost_usd": 63.54,
+        "total_hits": 43,
         "unique_rides": 4,
         "max_z_score": 5.24,
-        "avg_z_score": 0.47,
+        "avg_z_score": 0.5,
         "contributing_rides": [
           "Four",
           "one",
@@ -90,14 +90,14 @@
       "geometry": {
         "type": "Point",
         "coordinates": [
-          77.55427655847457,
-          12.918280106779662
+          77.55423136960351,
+          12.918212513656385
         ]
       },
       "properties": {
         "cluster_id": 2,
-        "centroid_lat": 12.918280106779662,
-        "centroid_lon": 77.55427655847457,
+        "centroid_lat": 12.918212513656385,
+        "centroid_lon": 77.55423136960351,
         "hazard_type": "Pothole",
         "severity": "Severe",
         "confidence": "High (Multi-Ride Consensus)",
@@ -106,16 +106,16 @@
         "priority": "P1 (Urgent Dispatch)",
         "repair_status": "Pending Emergency Repair",
         "action_recommendation": "Emergency Cold-mix Patching & Compaction",
-        "est_area_cm2": 2262.4495762711867,
-        "est_depth_cm": 3.1966101694915254,
-        "asphalt_volume_liters": 3.62,
-        "asphalt_mass_kg": 8.51,
-        "repair_cost_inr": 683,
-        "repair_cost_usd": 15.53,
-        "total_hits": 236,
+        "est_area_cm2": 16335.91189427313,
+        "est_depth_cm": 3.9158590308370034,
+        "asphalt_volume_liters": 31.98,
+        "asphalt_mass_kg": 75.15,
+        "repair_cost_inr": 3682,
+        "repair_cost_usd": 58.85,
+        "total_hits": 227,
         "unique_rides": 4,
         "max_z_score": 14.17,
-        "avg_z_score": 0.95,
+        "avg_z_score": 0.9,
         "contributing_rides": [
           "Four",
           "one",
@@ -145,12 +145,12 @@
         "priority": "P1 (Urgent Dispatch)",
         "repair_status": "Pending Emergency Repair",
         "action_recommendation": "Emergency Cold-mix Patching & Compaction",
-        "est_area_cm2": 6295.8,
-        "est_depth_cm": 2.5,
-        "asphalt_volume_liters": 7.87,
-        "asphalt_mass_kg": 18.49,
-        "repair_cost_inr": 1132,
-        "repair_cost_usd": 22.02,
+        "est_area_cm2": 25000.0,
+        "est_depth_cm": 3.4,
+        "asphalt_volume_liters": 42.5,
+        "asphalt_mass_kg": 99.88,
+        "repair_cost_inr": 4795,
+        "repair_cost_usd": 74.92,
         "total_hits": 1,
         "unique_rides": 1,
         "max_z_score": 1.25,
@@ -181,12 +181,12 @@
         "priority": "P1 (Urgent Dispatch)",
         "repair_status": "Pending Emergency Repair",
         "action_recommendation": "Emergency Cold-mix Patching & Compaction",
-        "est_area_cm2": 6295.8,
-        "est_depth_cm": 2.5,
-        "asphalt_volume_liters": 7.87,
-        "asphalt_mass_kg": 18.49,
-        "repair_cost_inr": 1132,
-        "repair_cost_usd": 22.02,
+        "est_area_cm2": 25000.0,
+        "est_depth_cm": 3.4,
+        "asphalt_volume_liters": 42.5,
+        "asphalt_mass_kg": 99.88,
+        "repair_cost_inr": 4795,
+        "repair_cost_usd": 74.92,
         "total_hits": 1,
         "unique_rides": 1,
         "max_z_score": 0.44,
@@ -210,23 +210,23 @@
         "centroid_lat": 12.9180167,
         "centroid_lon": 77.5532167,
         "hazard_type": "Pothole",
-        "severity": "Moderate",
-        "confidence": "Low (Single Pass Anomaly)",
-        "confidence_level": 1,
-        "lifecycle_stage": "Monitoring",
-        "priority": "P2 (Scheduled Maintenance)",
-        "repair_status": "Queued for Maintenance",
-        "action_recommendation": "Skin Patching & Bitumen Sealing",
-        "est_area_cm2": 3851.7,
-        "est_depth_cm": 4.5,
-        "asphalt_volume_liters": 8.67,
-        "asphalt_mass_kg": 20.37,
-        "repair_cost_inr": 1217,
-        "repair_cost_usd": 23.24,
-        "total_hits": 1,
+        "severity": "Severe",
+        "confidence": "Medium (Strong Single-Ride Impact)",
+        "confidence_level": 2,
+        "lifecycle_stage": "Active Defect",
+        "priority": "P1 (Urgent Dispatch)",
+        "repair_status": "Pending Emergency Repair",
+        "action_recommendation": "Emergency Cold-mix Patching & Compaction",
+        "est_area_cm2": 25000.0,
+        "est_depth_cm": 4.1,
+        "asphalt_volume_liters": 51.25,
+        "asphalt_mass_kg": 120.44,
+        "repair_cost_inr": 5720,
+        "repair_cost_usd": 88.29,
+        "total_hits": 2,
         "unique_rides": 1,
         "max_z_score": 2.74,
-        "avg_z_score": 2.74,
+        "avg_z_score": 1.92,
         "contributing_rides": [
           "Four"
         ]
@@ -246,23 +246,23 @@
         "centroid_lat": 12.918045,
         "centroid_lon": 77.553135,
         "hazard_type": "Pothole",
-        "severity": "Moderate",
-        "confidence": "Low (Single Pass Anomaly)",
-        "confidence_level": 1,
-        "lifecycle_stage": "Monitoring",
-        "priority": "P2 (Scheduled Maintenance)",
-        "repair_status": "Queued for Maintenance",
-        "action_recommendation": "Skin Patching & Bitumen Sealing",
-        "est_area_cm2": 5179.3,
-        "est_depth_cm": 4.6,
-        "asphalt_volume_liters": 11.91,
-        "asphalt_mass_kg": 27.99,
-        "repair_cost_inr": 1560,
-        "repair_cost_usd": 28.19,
-        "total_hits": 1,
+        "severity": "Severe",
+        "confidence": "Medium (Strong Single-Ride Impact)",
+        "confidence_level": 2,
+        "lifecycle_stage": "Active Defect",
+        "priority": "P1 (Urgent Dispatch)",
+        "repair_status": "Pending Emergency Repair",
+        "action_recommendation": "Emergency Cold-mix Patching & Compaction",
+        "est_area_cm2": 25000.0,
+        "est_depth_cm": 4.1,
+        "asphalt_volume_liters": 51.25,
+        "asphalt_mass_kg": 120.44,
+        "repair_cost_inr": 5720,
+        "repair_cost_usd": 88.29,
+        "total_hits": 2,
         "unique_rides": 1,
         "max_z_score": 2.79,
-        "avg_z_score": 2.79,
+        "avg_z_score": 1.63,
         "contributing_rides": [
           "Four"
         ]
@@ -289,12 +289,12 @@
         "priority": "P1 (Urgent Dispatch)",
         "repair_status": "Pending Emergency Repair",
         "action_recommendation": "Emergency Cold-mix Patching & Compaction",
-        "est_area_cm2": 1999.75,
-        "est_depth_cm": 5.5,
-        "asphalt_volume_liters": 5.5,
-        "asphalt_mass_kg": 12.93,
-        "repair_cost_inr": 882,
-        "repair_cost_usd": 18.4,
+        "est_area_cm2": 12961.7,
+        "est_depth_cm": 5.95,
+        "asphalt_volume_liters": 38.56,
+        "asphalt_mass_kg": 90.62,
+        "repair_cost_inr": 4378,
+        "repair_cost_usd": 68.9,
         "total_hits": 2,
         "unique_rides": 1,
         "max_z_score": 5.13,
@@ -309,14 +309,14 @@
       "geometry": {
         "type": "Point",
         "coordinates": [
-          77.55278915,
-          12.918117500000001
+          77.5528233,
+          12.91811
         ]
       },
       "properties": {
         "cluster_id": 8,
-        "centroid_lat": 12.918117500000001,
-        "centroid_lon": 77.55278915,
+        "centroid_lat": 12.91811,
+        "centroid_lon": 77.5528233,
         "hazard_type": "Speedbreaker",
         "severity": "Severe",
         "confidence": "Medium (Strong Single-Ride Impact)",
@@ -325,16 +325,16 @@
         "priority": "P1 (Urgent Dispatch)",
         "repair_status": "Pending Emergency Repair",
         "action_recommendation": "Reflective Thermoplastic Warning Stripes",
-        "est_area_cm2": 390.0,
-        "est_depth_cm": 4.15,
-        "asphalt_volume_liters": 0.81,
-        "asphalt_mass_kg": 1.9,
-        "repair_cost_inr": 386,
+        "est_area_cm2": 630.0,
+        "est_depth_cm": 5.8,
+        "asphalt_volume_liters": 1.83,
+        "asphalt_mass_kg": 4.3,
+        "repair_cost_inr": 494,
         "repair_cost_usd": 15.0,
-        "total_hits": 2,
+        "total_hits": 1,
         "unique_rides": 1,
         "max_z_score": 3.5,
-        "avg_z_score": 2.2,
+        "avg_z_score": 3.5,
         "contributing_rides": [
           "Four"
         ]
@@ -345,14 +345,14 @@
       "geometry": {
         "type": "Point",
         "coordinates": [
-          77.55233964285715,
-          12.918184885714282
+          77.55244554400001,
+          12.918170996
         ]
       },
       "properties": {
         "cluster_id": 9,
-        "centroid_lat": 12.918184885714282,
-        "centroid_lon": 77.55233964285715,
+        "centroid_lat": 12.918170996,
+        "centroid_lon": 77.55244554400001,
         "hazard_type": "Pothole",
         "severity": "Severe",
         "confidence": "High (Multi-Ride Consensus)",
@@ -361,16 +361,16 @@
         "priority": "P1 (Urgent Dispatch)",
         "repair_status": "Pending Emergency Repair",
         "action_recommendation": "Emergency Cold-mix Patching & Compaction",
-        "est_area_cm2": 2031.5607142857139,
-        "est_depth_cm": 4.0964285714285715,
-        "asphalt_volume_liters": 4.16,
-        "asphalt_mass_kg": 9.78,
-        "repair_cost_inr": 740,
-        "repair_cost_usd": 16.36,
-        "total_hits": 28,
+        "est_area_cm2": 13629.247999999998,
+        "est_depth_cm": 4.376,
+        "asphalt_volume_liters": 29.82,
+        "asphalt_mass_kg": 70.08,
+        "repair_cost_inr": 3454,
+        "repair_cost_usd": 55.55,
+        "total_hits": 25,
         "unique_rides": 2,
         "max_z_score": 6.89,
-        "avg_z_score": 1.64,
+        "avg_z_score": 1.49,
         "contributing_rides": [
           "Four",
           "Three"
@@ -382,14 +382,14 @@
       "geometry": {
         "type": "Point",
         "coordinates": [
-          77.55218783333335,
-          12.917897550000001
+          77.55203829999999,
+          12.91818335
         ]
       },
       "properties": {
         "cluster_id": 10,
-        "centroid_lat": 12.917897550000001,
-        "centroid_lon": 77.55218783333335,
+        "centroid_lat": 12.91818335,
+        "centroid_lon": 77.55203829999999,
         "hazard_type": "Pothole",
         "severity": "Severe",
         "confidence": "High (Multi-Ride Consensus)",
@@ -398,16 +398,16 @@
         "priority": "P1 (Urgent Dispatch)",
         "repair_status": "Pending Emergency Repair",
         "action_recommendation": "Emergency Cold-mix Patching & Compaction",
-        "est_area_cm2": 2354.7233333333334,
-        "est_depth_cm": 3.1233333333333335,
-        "asphalt_volume_liters": 3.68,
-        "asphalt_mass_kg": 8.65,
-        "repair_cost_inr": 689,
-        "repair_cost_usd": 15.62,
-        "total_hits": 30,
+        "est_area_cm2": 9505.15,
+        "est_depth_cm": 5.65,
+        "asphalt_volume_liters": 26.85,
+        "asphalt_mass_kg": 63.1,
+        "repair_cost_inr": 3140,
+        "repair_cost_usd": 51.02,
+        "total_hits": 2,
         "unique_rides": 2,
-        "max_z_score": 4.41,
-        "avg_z_score": 0.89,
+        "max_z_score": 4.77,
+        "avg_z_score": 2.38,
         "contributing_rides": [
           "Four",
           "Three"
@@ -419,14 +419,14 @@
       "geometry": {
         "type": "Point",
         "coordinates": [
-          77.5527202764706,
-          12.917733100000001
+          77.55220244137931,
+          12.917884031034482
         ]
       },
       "properties": {
         "cluster_id": 11,
-        "centroid_lat": 12.917733100000001,
-        "centroid_lon": 77.5527202764706,
+        "centroid_lat": 12.917884031034482,
+        "centroid_lon": 77.55220244137931,
         "hazard_type": "Pothole",
         "severity": "Severe",
         "confidence": "High (Multi-Ride Consensus)",
@@ -435,20 +435,19 @@
         "priority": "P1 (Urgent Dispatch)",
         "repair_status": "Pending Emergency Repair",
         "action_recommendation": "Emergency Cold-mix Patching & Compaction",
-        "est_area_cm2": 2141.7529411764704,
-        "est_depth_cm": 3.9882352941176475,
-        "asphalt_volume_liters": 4.27,
-        "asphalt_mass_kg": 10.03,
-        "repair_cost_inr": 751,
-        "repair_cost_usd": 16.52,
-        "total_hits": 17,
-        "unique_rides": 3,
-        "max_z_score": 7.08,
-        "avg_z_score": 1.43,
+        "est_area_cm2": 14840.172413793103,
+        "est_depth_cm": 3.8689655172413806,
+        "asphalt_volume_liters": 28.71,
+        "asphalt_mass_kg": 67.47,
+        "repair_cost_inr": 3336,
+        "repair_cost_usd": 53.86,
+        "total_hits": 29,
+        "unique_rides": 2,
+        "max_z_score": 4.41,
+        "avg_z_score": 1.03,
         "contributing_rides": [
           "Four",
-          "Three",
-          "two"
+          "Three"
         ]
       }
     },
@@ -457,14 +456,14 @@
       "geometry": {
         "type": "Point",
         "coordinates": [
-          77.55308066,
-          12.91767006
+          77.55279785862069,
+          12.917725575862068
         ]
       },
       "properties": {
         "cluster_id": 12,
-        "centroid_lat": 12.91767006,
-        "centroid_lon": 77.55308066,
+        "centroid_lat": 12.917725575862068,
+        "centroid_lon": 77.55279785862069,
         "hazard_type": "Pothole",
         "severity": "Severe",
         "confidence": "High (Multi-Ride Consensus)",
@@ -473,16 +472,16 @@
         "priority": "P1 (Urgent Dispatch)",
         "repair_status": "Pending Emergency Repair",
         "action_recommendation": "Emergency Cold-mix Patching & Compaction",
-        "est_area_cm2": 4058.15,
-        "est_depth_cm": 4.5600000000000005,
-        "asphalt_volume_liters": 9.25,
-        "asphalt_mass_kg": 21.74,
-        "repair_cost_inr": 1278,
-        "repair_cost_usd": 24.13,
-        "total_hits": 10,
+        "est_area_cm2": 12744.25172413793,
+        "est_depth_cm": 4.672413793103449,
+        "asphalt_volume_liters": 29.77,
+        "asphalt_mass_kg": 69.96,
+        "repair_cost_inr": 3448,
+        "repair_cost_usd": 55.47,
+        "total_hits": 29,
         "unique_rides": 3,
         "max_z_score": 13.33,
-        "avg_z_score": 2.77,
+        "avg_z_score": 1.75,
         "contributing_rides": [
           "Four",
           "Three",
@@ -495,14 +494,50 @@
       "geometry": {
         "type": "Point",
         "coordinates": [
-          77.55338358888888,
-          12.917565900000001
+          77.5532058,
+          12.9176387
         ]
       },
       "properties": {
         "cluster_id": 13,
-        "centroid_lat": 12.917565900000001,
-        "centroid_lon": 77.55338358888888,
+        "centroid_lat": 12.9176387,
+        "centroid_lon": 77.5532058,
+        "hazard_type": "Pothole",
+        "severity": "Moderate",
+        "confidence": "Low (Single Pass Anomaly)",
+        "confidence_level": 1,
+        "lifecycle_stage": "Monitoring",
+        "priority": "P2 (Scheduled Maintenance)",
+        "repair_status": "Queued for Maintenance",
+        "action_recommendation": "Skin Patching & Bitumen Sealing",
+        "est_area_cm2": 7632.0,
+        "est_depth_cm": 3.4,
+        "asphalt_volume_liters": 12.97,
+        "asphalt_mass_kg": 30.48,
+        "repair_cost_inr": 1672,
+        "repair_cost_usd": 29.81,
+        "total_hits": 1,
+        "unique_rides": 1,
+        "max_z_score": 0.65,
+        "avg_z_score": 0.65,
+        "contributing_rides": [
+          "Four"
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          77.55338768749999,
+          12.917562199999999
+        ]
+      },
+      "properties": {
+        "cluster_id": 14,
+        "centroid_lat": 12.917562199999999,
+        "centroid_lon": 77.55338768749999,
         "hazard_type": "Pothole",
         "severity": "Severe",
         "confidence": "High (Multi-Ride Consensus)",
@@ -511,16 +546,16 @@
         "priority": "P1 (Urgent Dispatch)",
         "repair_status": "Pending Emergency Repair",
         "action_recommendation": "Emergency Cold-mix Patching & Compaction",
-        "est_area_cm2": 1935.8111111111111,
-        "est_depth_cm": 2.5,
-        "asphalt_volume_liters": 2.42,
-        "asphalt_mass_kg": 5.69,
-        "repair_cost_inr": 556,
-        "repair_cost_usd": 15.0,
-        "total_hits": 9,
+        "est_area_cm2": 16663.1625,
+        "est_depth_cm": 3.4,
+        "asphalt_volume_liters": 28.33,
+        "asphalt_mass_kg": 66.58,
+        "repair_cost_inr": 3296,
+        "repair_cost_usd": 53.28,
+        "total_hits": 8,
         "unique_rides": 3,
-        "max_z_score": 1.14,
-        "avg_z_score": 0.3,
+        "max_z_score": 1.01,
+        "avg_z_score": 0.2,
         "contributing_rides": [
           "Four",
           "Three",
@@ -533,14 +568,14 @@
       "geometry": {
         "type": "Point",
         "coordinates": [
-          77.55355657333332,
-          12.917615033333332
+          77.5535567,
+          12.917604381818181
         ]
       },
       "properties": {
-        "cluster_id": 14,
-        "centroid_lat": 12.917615033333332,
-        "centroid_lon": 77.55355657333332,
+        "cluster_id": 15,
+        "centroid_lat": 12.917604381818181,
+        "centroid_lon": 77.5535567,
         "hazard_type": "Pothole",
         "severity": "Severe",
         "confidence": "High (Multi-Ride Consensus)",
@@ -549,21 +584,57 @@
         "priority": "P1 (Urgent Dispatch)",
         "repair_status": "Pending Emergency Repair",
         "action_recommendation": "Emergency Cold-mix Patching & Compaction",
-        "est_area_cm2": 1740.306666666667,
-        "est_depth_cm": 3.4466666666666668,
-        "asphalt_volume_liters": 3.0,
-        "asphalt_mass_kg": 7.05,
-        "repair_cost_inr": 617,
-        "repair_cost_usd": 15.0,
-        "total_hits": 15,
-        "unique_rides": 4,
+        "est_area_cm2": 8365.827272727272,
+        "est_depth_cm": 4.1909090909090905,
+        "asphalt_volume_liters": 17.53,
+        "asphalt_mass_kg": 41.2,
+        "repair_cost_inr": 2154,
+        "repair_cost_usd": 36.78,
+        "total_hits": 11,
+        "unique_rides": 3,
         "max_z_score": 4.27,
-        "avg_z_score": 1.19,
+        "avg_z_score": 1.28,
         "contributing_rides": [
           "Four",
           "one",
-          "Three",
-          "two"
+          "Three"
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          77.554666,
+          12.919225675
+        ]
+      },
+      "properties": {
+        "cluster_id": 16,
+        "centroid_lat": 12.919225675,
+        "centroid_lon": 77.554666,
+        "hazard_type": "Pothole",
+        "severity": "Severe",
+        "confidence": "High (Multi-Ride Consensus)",
+        "confidence_level": 3,
+        "lifecycle_stage": "Corroborated Defect",
+        "priority": "P1 (Urgent Dispatch)",
+        "repair_status": "Pending Emergency Repair",
+        "action_recommendation": "Emergency Cold-mix Patching & Compaction",
+        "est_area_cm2": 13334.425,
+        "est_depth_cm": 4.225,
+        "asphalt_volume_liters": 28.17,
+        "asphalt_mass_kg": 66.2,
+        "repair_cost_inr": 3279,
+        "repair_cost_usd": 53.03,
+        "total_hits": 4,
+        "unique_rides": 2,
+        "max_z_score": 4.09,
+        "avg_z_score": 1.22,
+        "contributing_rides": [
+          "Four",
+          "one"
         ]
       }
     },
@@ -577,7 +648,7 @@
         ]
       },
       "properties": {
-        "cluster_id": 15,
+        "cluster_id": 17,
         "centroid_lat": 12.9174434,
         "centroid_lon": 77.5536089,
         "hazard_type": "Pothole",
@@ -588,11 +659,11 @@
         "priority": "P3 (Routine Inspection)",
         "repair_status": "Under Observation",
         "action_recommendation": "Routine Road Surface Monitoring",
-        "est_area_cm2": 150.0,
-        "est_depth_cm": 2.5,
-        "asphalt_volume_liters": 0.19,
-        "asphalt_mass_kg": 0.45,
-        "repair_cost_inr": 350,
+        "est_area_cm2": 831.3,
+        "est_depth_cm": 3.4,
+        "asphalt_volume_liters": 1.41,
+        "asphalt_mass_kg": 3.31,
+        "repair_cost_inr": 449,
         "repair_cost_usd": 15.0,
         "total_hits": 2,
         "unique_rides": 1,
@@ -608,28 +679,64 @@
       "geometry": {
         "type": "Point",
         "coordinates": [
-          77.5535899,
-          12.9173454
+          77.55358105,
+          12.9173261
         ]
       },
       "properties": {
-        "cluster_id": 16,
-        "centroid_lat": 12.9173454,
-        "centroid_lon": 77.5535899,
+        "cluster_id": 18,
+        "centroid_lat": 12.9173261,
+        "centroid_lon": 77.55358105,
         "hazard_type": "Pothole",
         "severity": "Low",
-        "confidence": "Low (Single Pass Anomaly)",
-        "confidence_level": 1,
-        "lifecycle_stage": "Monitoring",
+        "confidence": "Medium (Strong Single-Ride Impact)",
+        "confidence_level": 2,
+        "lifecycle_stage": "Active Defect",
         "priority": "P3 (Routine Inspection)",
         "repair_status": "Under Observation",
         "action_recommendation": "Routine Road Surface Monitoring",
-        "est_area_cm2": 234.2,
-        "est_depth_cm": 2.5,
-        "asphalt_volume_liters": 0.29,
-        "asphalt_mass_kg": 0.68,
-        "repair_cost_inr": 350,
-        "repair_cost_usd": 15.0,
+        "est_area_cm2": 5179.1,
+        "est_depth_cm": 3.4,
+        "asphalt_volume_liters": 8.8,
+        "asphalt_mass_kg": 20.68,
+        "repair_cost_inr": 1231,
+        "repair_cost_usd": 23.44,
+        "total_hits": 2,
+        "unique_rides": 1,
+        "max_z_score": 0.0,
+        "avg_z_score": 0.0,
+        "contributing_rides": [
+          "one"
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          77.553508,
+          12.9172587
+        ]
+      },
+      "properties": {
+        "cluster_id": 19,
+        "centroid_lat": 12.9172587,
+        "centroid_lon": 77.553508,
+        "hazard_type": "Pothole",
+        "severity": "Severe",
+        "confidence": "Medium (Strong Single-Ride Impact)",
+        "confidence_level": 2,
+        "lifecycle_stage": "Active Defect",
+        "priority": "P1 (Urgent Dispatch)",
+        "repair_status": "Pending Emergency Repair",
+        "action_recommendation": "Emergency Cold-mix Patching & Compaction",
+        "est_area_cm2": 25000.0,
+        "est_depth_cm": 3.4,
+        "asphalt_volume_liters": 42.5,
+        "asphalt_mass_kg": 99.88,
+        "repair_cost_inr": 4795,
+        "repair_cost_usd": 74.92,
         "total_hits": 1,
         "unique_rides": 1,
         "max_z_score": 0.0,
@@ -644,14 +751,14 @@
       "geometry": {
         "type": "Point",
         "coordinates": [
-          77.55344383333333,
-          12.917266066666665
+          77.55336476666666,
+          12.917284033333333
         ]
       },
       "properties": {
-        "cluster_id": 17,
-        "centroid_lat": 12.917266066666665,
-        "centroid_lon": 77.55344383333333,
+        "cluster_id": 20,
+        "centroid_lat": 12.917284033333333,
+        "centroid_lon": 77.55336476666666,
         "hazard_type": "Pothole",
         "severity": "Severe",
         "confidence": "Medium (Strong Single-Ride Impact)",
@@ -660,12 +767,12 @@
         "priority": "P1 (Urgent Dispatch)",
         "repair_status": "Pending Emergency Repair",
         "action_recommendation": "Emergency Cold-mix Patching & Compaction",
-        "est_area_cm2": 2793.4,
-        "est_depth_cm": 2.5,
-        "asphalt_volume_liters": 3.49,
-        "asphalt_mass_kg": 8.2,
-        "repair_cost_inr": 669,
-        "repair_cost_usd": 15.33,
+        "est_area_cm2": 25000.0,
+        "est_depth_cm": 3.4,
+        "asphalt_volume_liters": 42.5,
+        "asphalt_mass_kg": 99.88,
+        "repair_cost_inr": 4795,
+        "repair_cost_usd": 74.92,
         "total_hits": 3,
         "unique_rides": 1,
         "max_z_score": 0.0,
@@ -680,122 +787,50 @@
       "geometry": {
         "type": "Point",
         "coordinates": [
-          77.5532848,
-          12.9173019
-        ]
-      },
-      "properties": {
-        "cluster_id": 18,
-        "centroid_lat": 12.9173019,
-        "centroid_lon": 77.5532848,
-        "hazard_type": "Pothole",
-        "severity": "Severe",
-        "confidence": "Medium (Strong Single-Ride Impact)",
-        "confidence_level": 2,
-        "lifecycle_stage": "Active Defect",
-        "priority": "P1 (Urgent Dispatch)",
-        "repair_status": "Pending Emergency Repair",
-        "action_recommendation": "Emergency Cold-mix Patching & Compaction",
-        "est_area_cm2": 1568.1,
-        "est_depth_cm": 2.5,
-        "asphalt_volume_liters": 1.96,
-        "asphalt_mass_kg": 4.61,
-        "repair_cost_inr": 507,
-        "repair_cost_usd": 15.0,
-        "total_hits": 1,
-        "unique_rides": 1,
-        "max_z_score": 0.0,
-        "avg_z_score": 0.0,
-        "contributing_rides": [
-          "one"
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          77.5529687,
-          12.9173216
-        ]
-      },
-      "properties": {
-        "cluster_id": 19,
-        "centroid_lat": 12.9173216,
-        "centroid_lon": 77.5529687,
-        "hazard_type": "Pothole",
-        "severity": "Severe",
-        "confidence": "Medium (Strong Single-Ride Impact)",
-        "confidence_level": 2,
-        "lifecycle_stage": "Active Defect",
-        "priority": "P1 (Urgent Dispatch)",
-        "repair_status": "Pending Emergency Repair",
-        "action_recommendation": "Emergency Cold-mix Patching & Compaction",
-        "est_area_cm2": 3518.2,
-        "est_depth_cm": 2.5,
-        "asphalt_volume_liters": 4.4,
-        "asphalt_mass_kg": 10.34,
-        "repair_cost_inr": 765,
-        "repair_cost_usd": 16.72,
-        "total_hits": 1,
-        "unique_rides": 1,
-        "max_z_score": 0.0,
-        "avg_z_score": 0.0,
-        "contributing_rides": [
-          "one"
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          77.5528194,
-          12.9173791
-        ]
-      },
-      "properties": {
-        "cluster_id": 20,
-        "centroid_lat": 12.9173791,
-        "centroid_lon": 77.5528194,
-        "hazard_type": "Pothole",
-        "severity": "Severe",
-        "confidence": "Medium (Strong Single-Ride Impact)",
-        "confidence_level": 2,
-        "lifecycle_stage": "Active Defect",
-        "priority": "P1 (Urgent Dispatch)",
-        "repair_status": "Pending Emergency Repair",
-        "action_recommendation": "Emergency Cold-mix Patching & Compaction",
-        "est_area_cm2": 4522.0,
-        "est_depth_cm": 2.5,
-        "asphalt_volume_liters": 5.65,
-        "asphalt_mass_kg": 13.28,
-        "repair_cost_inr": 898,
-        "repair_cost_usd": 18.63,
-        "total_hits": 1,
-        "unique_rides": 1,
-        "max_z_score": 0.0,
-        "avg_z_score": 0.0,
-        "contributing_rides": [
-          "one"
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          77.55266081666667,
-          12.917311266666665
+          77.55279254999999,
+          12.917382
         ]
       },
       "properties": {
         "cluster_id": 21,
-        "centroid_lat": 12.917311266666665,
-        "centroid_lon": 77.55266081666667,
+        "centroid_lat": 12.917382,
+        "centroid_lon": 77.55279254999999,
+        "hazard_type": "Pothole",
+        "severity": "Severe",
+        "confidence": "Medium (Strong Single-Ride Impact)",
+        "confidence_level": 2,
+        "lifecycle_stage": "Active Defect",
+        "priority": "P1 (Urgent Dispatch)",
+        "repair_status": "Pending Emergency Repair",
+        "action_recommendation": "Emergency Cold-mix Patching & Compaction",
+        "est_area_cm2": 21011.15,
+        "est_depth_cm": 3.4,
+        "asphalt_volume_liters": 35.72,
+        "asphalt_mass_kg": 83.94,
+        "repair_cost_inr": 4077,
+        "repair_cost_usd": 64.56,
+        "total_hits": 2,
+        "unique_rides": 1,
+        "max_z_score": 0.0,
+        "avg_z_score": 0.0,
+        "contributing_rides": [
+          "one"
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          77.55265023333334,
+          12.917259083333333
+        ]
+      },
+      "properties": {
+        "cluster_id": 22,
+        "centroid_lat": 12.917259083333333,
+        "centroid_lon": 77.55265023333334,
         "hazard_type": "Pothole",
         "severity": "Severe",
         "confidence": "High (Multi-Ride Consensus)",
@@ -804,12 +839,12 @@
         "priority": "P1 (Urgent Dispatch)",
         "repair_status": "Pending Emergency Repair",
         "action_recommendation": "Emergency Cold-mix Patching & Compaction",
-        "est_area_cm2": 1939.6833333333334,
-        "est_depth_cm": 2.5,
-        "asphalt_volume_liters": 2.42,
-        "asphalt_mass_kg": 5.69,
-        "repair_cost_inr": 556,
-        "repair_cost_usd": 15.0,
+        "est_area_cm2": 25000.0,
+        "est_depth_cm": 3.4,
+        "asphalt_volume_liters": 42.5,
+        "asphalt_mass_kg": 99.88,
+        "repair_cost_inr": 4795,
+        "repair_cost_usd": 74.92,
         "total_hits": 6,
         "unique_rides": 2,
         "max_z_score": 0.0,
@@ -825,51 +860,14 @@
       "geometry": {
         "type": "Point",
         "coordinates": [
-          77.552644375,
-          12.91682505
-        ]
-      },
-      "properties": {
-        "cluster_id": 22,
-        "centroid_lat": 12.91682505,
-        "centroid_lon": 77.552644375,
-        "hazard_type": "Pothole",
-        "severity": "Severe",
-        "confidence": "High (Multi-Ride Consensus)",
-        "confidence_level": 3,
-        "lifecycle_stage": "Corroborated Defect",
-        "priority": "P1 (Urgent Dispatch)",
-        "repair_status": "Pending Emergency Repair",
-        "action_recommendation": "Emergency Cold-mix Patching & Compaction",
-        "est_area_cm2": 5232.7,
-        "est_depth_cm": 2.5,
-        "asphalt_volume_liters": 6.54,
-        "asphalt_mass_kg": 15.37,
-        "repair_cost_inr": 992,
-        "repair_cost_usd": 19.99,
-        "total_hits": 4,
-        "unique_rides": 2,
-        "max_z_score": 0.0,
-        "avg_z_score": 0.0,
-        "contributing_rides": [
-          "one",
-          "two"
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          77.55263036,
-          12.91658222
+          77.55264446000001,
+          12.916964459999999
         ]
       },
       "properties": {
         "cluster_id": 23,
-        "centroid_lat": 12.91658222,
-        "centroid_lon": 77.55263036,
+        "centroid_lat": 12.916964459999999,
+        "centroid_lon": 77.55264446000001,
         "hazard_type": "Pothole",
         "severity": "Severe",
         "confidence": "High (Multi-Ride Consensus)",
@@ -878,12 +876,12 @@
         "priority": "P1 (Urgent Dispatch)",
         "repair_status": "Pending Emergency Repair",
         "action_recommendation": "Emergency Cold-mix Patching & Compaction",
-        "est_area_cm2": 2136.1,
-        "est_depth_cm": 2.5,
-        "asphalt_volume_liters": 2.67,
-        "asphalt_mass_kg": 6.27,
-        "repair_cost_inr": 582,
-        "repair_cost_usd": 15.0,
+        "est_area_cm2": 24560.6,
+        "est_depth_cm": 3.4,
+        "asphalt_volume_liters": 41.75,
+        "asphalt_mass_kg": 98.11,
+        "repair_cost_inr": 4715,
+        "repair_cost_usd": 73.77,
         "total_hits": 5,
         "unique_rides": 2,
         "max_z_score": 0.0,
@@ -899,12 +897,48 @@
       "geometry": {
         "type": "Point",
         "coordinates": [
+          77.55266056666666,
+          12.916740333333331
+        ]
+      },
+      "properties": {
+        "cluster_id": 24,
+        "centroid_lat": 12.916740333333331,
+        "centroid_lon": 77.55266056666666,
+        "hazard_type": "Pothole",
+        "severity": "Severe",
+        "confidence": "Medium (Strong Single-Ride Impact)",
+        "confidence_level": 2,
+        "lifecycle_stage": "Active Defect",
+        "priority": "P1 (Urgent Dispatch)",
+        "repair_status": "Pending Emergency Repair",
+        "action_recommendation": "Emergency Cold-mix Patching & Compaction",
+        "est_area_cm2": 23851.466666666664,
+        "est_depth_cm": 3.4,
+        "asphalt_volume_liters": 40.55,
+        "asphalt_mass_kg": 95.29,
+        "repair_cost_inr": 4588,
+        "repair_cost_usd": 71.94,
+        "total_hits": 3,
+        "unique_rides": 1,
+        "max_z_score": 0.0,
+        "avg_z_score": 0.0,
+        "contributing_rides": [
+          "one"
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
           77.55263835,
           12.9164379
         ]
       },
       "properties": {
-        "cluster_id": 24,
+        "cluster_id": 25,
         "centroid_lat": 12.9164379,
         "centroid_lon": 77.55263835,
         "hazard_type": "Pothole",
@@ -915,12 +949,12 @@
         "priority": "P1 (Urgent Dispatch)",
         "repair_status": "Pending Emergency Repair",
         "action_recommendation": "Emergency Cold-mix Patching & Compaction",
-        "est_area_cm2": 3434.2,
-        "est_depth_cm": 2.5,
-        "asphalt_volume_liters": 4.29,
-        "asphalt_mass_kg": 10.08,
-        "repair_cost_inr": 754,
-        "repair_cost_usd": 16.55,
+        "est_area_cm2": 25000.0,
+        "est_depth_cm": 3.4,
+        "asphalt_volume_liters": 42.5,
+        "asphalt_mass_kg": 99.88,
+        "repair_cost_inr": 4795,
+        "repair_cost_usd": 74.92,
         "total_hits": 2,
         "unique_rides": 2,
         "max_z_score": 0.0,
@@ -936,14 +970,14 @@
       "geometry": {
         "type": "Point",
         "coordinates": [
-          77.55264721666667,
-          12.91626445
+          77.55265832222221,
+          12.916208899999999
         ]
       },
       "properties": {
-        "cluster_id": 25,
-        "centroid_lat": 12.91626445,
-        "centroid_lon": 77.55264721666667,
+        "cluster_id": 26,
+        "centroid_lat": 12.916208899999999,
+        "centroid_lon": 77.55265832222221,
         "hazard_type": "Pothole",
         "severity": "Severe",
         "confidence": "High (Multi-Ride Consensus)",
@@ -952,13 +986,13 @@
         "priority": "P1 (Urgent Dispatch)",
         "repair_status": "Pending Emergency Repair",
         "action_recommendation": "Emergency Cold-mix Patching & Compaction",
-        "est_area_cm2": 1384.0666666666666,
-        "est_depth_cm": 2.5,
-        "asphalt_volume_liters": 1.73,
-        "asphalt_mass_kg": 4.07,
-        "repair_cost_inr": 483,
-        "repair_cost_usd": 15.0,
-        "total_hits": 6,
+        "est_area_cm2": 17560.244444444445,
+        "est_depth_cm": 3.4,
+        "asphalt_volume_liters": 29.85,
+        "asphalt_mass_kg": 70.15,
+        "repair_cost_inr": 3457,
+        "repair_cost_usd": 55.6,
+        "total_hits": 9,
         "unique_rides": 2,
         "max_z_score": 0.0,
         "avg_z_score": 0.0,
@@ -973,14 +1007,14 @@
       "geometry": {
         "type": "Point",
         "coordinates": [
-          77.5526604857143,
-          12.915982614285715
+          77.5526767,
+          12.91601
         ]
       },
       "properties": {
-        "cluster_id": 26,
-        "centroid_lat": 12.915982614285715,
-        "centroid_lon": 77.5526604857143,
+        "cluster_id": 27,
+        "centroid_lat": 12.91601,
+        "centroid_lon": 77.5526767,
         "hazard_type": "Pothole",
         "severity": "Severe",
         "confidence": "Medium (Strong Single-Ride Impact)",
@@ -989,13 +1023,49 @@
         "priority": "P1 (Urgent Dispatch)",
         "repair_status": "Pending Emergency Repair",
         "action_recommendation": "Emergency Cold-mix Patching & Compaction",
-        "est_area_cm2": 2603.4285714285716,
-        "est_depth_cm": 2.5,
-        "asphalt_volume_liters": 3.25,
-        "asphalt_mass_kg": 7.64,
-        "repair_cost_inr": 644,
-        "repair_cost_usd": 15.0,
-        "total_hits": 7,
+        "est_area_cm2": 25000.0,
+        "est_depth_cm": 3.4,
+        "asphalt_volume_liters": 42.5,
+        "asphalt_mass_kg": 99.88,
+        "repair_cost_inr": 4795,
+        "repair_cost_usd": 74.92,
+        "total_hits": 1,
+        "unique_rides": 1,
+        "max_z_score": 0.0,
+        "avg_z_score": 0.0,
+        "contributing_rides": [
+          "one"
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          77.55263946666666,
+          12.915923900000001
+        ]
+      },
+      "properties": {
+        "cluster_id": 28,
+        "centroid_lat": 12.915923900000001,
+        "centroid_lon": 77.55263946666666,
+        "hazard_type": "Pothole",
+        "severity": "Severe",
+        "confidence": "Medium (Strong Single-Ride Impact)",
+        "confidence_level": 2,
+        "lifecycle_stage": "Active Defect",
+        "priority": "P1 (Urgent Dispatch)",
+        "repair_status": "Pending Emergency Repair",
+        "action_recommendation": "Emergency Cold-mix Patching & Compaction",
+        "est_area_cm2": 25000.0,
+        "est_depth_cm": 3.4,
+        "asphalt_volume_liters": 42.5,
+        "asphalt_mass_kg": 99.88,
+        "repair_cost_inr": 4795,
+        "repair_cost_usd": 74.92,
+        "total_hits": 3,
         "unique_rides": 1,
         "max_z_score": 0.0,
         "avg_z_score": 0.0,
@@ -1014,7 +1084,7 @@
         ]
       },
       "properties": {
-        "cluster_id": 27,
+        "cluster_id": 29,
         "centroid_lat": 12.9157492,
         "centroid_lon": 77.55246517500001,
         "hazard_type": "Pothole",
@@ -1025,12 +1095,12 @@
         "priority": "P1 (Urgent Dispatch)",
         "repair_status": "Pending Emergency Repair",
         "action_recommendation": "Emergency Cold-mix Patching & Compaction",
-        "est_area_cm2": 1688.0,
-        "est_depth_cm": 2.5,
-        "asphalt_volume_liters": 2.11,
-        "asphalt_mass_kg": 4.96,
-        "repair_cost_inr": 523,
-        "repair_cost_usd": 15.0,
+        "est_area_cm2": 19130.375,
+        "est_depth_cm": 3.4,
+        "asphalt_volume_liters": 32.52,
+        "asphalt_mass_kg": 76.42,
+        "repair_cost_inr": 3739,
+        "repair_cost_usd": 59.67,
         "total_hits": 8,
         "unique_rides": 2,
         "max_z_score": 0.0,
@@ -1051,7 +1121,7 @@
         ]
       },
       "properties": {
-        "cluster_id": 28,
+        "cluster_id": 30,
         "centroid_lat": 12.9183738,
         "centroid_lon": 77.5545504,
         "hazard_type": "Pothole",
@@ -1062,12 +1132,12 @@
         "priority": "P1 (Urgent Dispatch)",
         "repair_status": "Pending Emergency Repair",
         "action_recommendation": "Emergency Cold-mix Patching & Compaction",
-        "est_area_cm2": 3383.2,
-        "est_depth_cm": 2.5,
-        "asphalt_volume_liters": 4.23,
-        "asphalt_mass_kg": 9.94,
-        "repair_cost_inr": 747,
-        "repair_cost_usd": 16.46,
+        "est_area_cm2": 25000.0,
+        "est_depth_cm": 3.4,
+        "asphalt_volume_liters": 42.5,
+        "asphalt_mass_kg": 99.88,
+        "repair_cost_inr": 4795,
+        "repair_cost_usd": 74.92,
         "total_hits": 2,
         "unique_rides": 1,
         "max_z_score": 0.0,
@@ -1087,7 +1157,7 @@
         ]
       },
       "properties": {
-        "cluster_id": 29,
+        "cluster_id": 31,
         "centroid_lat": 12.9182991,
         "centroid_lon": 77.5545291,
         "hazard_type": "Pothole",
@@ -1098,12 +1168,12 @@
         "priority": "P3 (Routine Inspection)",
         "repair_status": "Under Observation",
         "action_recommendation": "Routine Road Surface Monitoring",
-        "est_area_cm2": 194.7,
-        "est_depth_cm": 2.5,
-        "asphalt_volume_liters": 0.24,
-        "asphalt_mass_kg": 0.56,
-        "repair_cost_inr": 350,
-        "repair_cost_usd": 15.0,
+        "est_area_cm2": 11627.4,
+        "est_depth_cm": 3.4,
+        "asphalt_volume_liters": 19.77,
+        "asphalt_mass_kg": 46.46,
+        "repair_cost_inr": 2391,
+        "repair_cost_usd": 40.2,
         "total_hits": 2,
         "unique_rides": 1,
         "max_z_score": 0.0,
@@ -1118,14 +1188,14 @@
       "geometry": {
         "type": "Point",
         "coordinates": [
-          77.55345252500001,
-          12.917852100000001
+          77.5545032,
+          12.918223
         ]
       },
       "properties": {
-        "cluster_id": 30,
-        "centroid_lat": 12.917852100000001,
-        "centroid_lon": 77.55345252500001,
+        "cluster_id": 32,
+        "centroid_lat": 12.918223,
+        "centroid_lon": 77.5545032,
         "hazard_type": "Pothole",
         "severity": "Severe",
         "confidence": "Medium (Strong Single-Ride Impact)",
@@ -1134,49 +1204,13 @@
         "priority": "P1 (Urgent Dispatch)",
         "repair_status": "Pending Emergency Repair",
         "action_recommendation": "Emergency Cold-mix Patching & Compaction",
-        "est_area_cm2": 1193.2,
-        "est_depth_cm": 2.5,
-        "asphalt_volume_liters": 1.49,
-        "asphalt_mass_kg": 3.5,
-        "repair_cost_inr": 458,
-        "repair_cost_usd": 15.0,
-        "total_hits": 4,
-        "unique_rides": 1,
-        "max_z_score": 0.0,
-        "avg_z_score": 0.0,
-        "contributing_rides": [
-          "Three"
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          77.55322836666667,
-          12.9179261
-        ]
-      },
-      "properties": {
-        "cluster_id": 31,
-        "centroid_lat": 12.9179261,
-        "centroid_lon": 77.55322836666667,
-        "hazard_type": "Pothole",
-        "severity": "Severe",
-        "confidence": "Medium (Strong Single-Ride Impact)",
-        "confidence_level": 2,
-        "lifecycle_stage": "Active Defect",
-        "priority": "P1 (Urgent Dispatch)",
-        "repair_status": "Pending Emergency Repair",
-        "action_recommendation": "Emergency Cold-mix Patching & Compaction",
-        "est_area_cm2": 4955.066666666667,
-        "est_depth_cm": 2.5,
-        "asphalt_volume_liters": 6.19,
-        "asphalt_mass_kg": 14.55,
-        "repair_cost_inr": 955,
-        "repair_cost_usd": 19.46,
-        "total_hits": 3,
+        "est_area_cm2": 25000.0,
+        "est_depth_cm": 3.4,
+        "asphalt_volume_liters": 42.5,
+        "asphalt_mass_kg": 99.88,
+        "repair_cost_inr": 4795,
+        "repair_cost_usd": 74.92,
+        "total_hits": 1,
         "unique_rides": 1,
         "max_z_score": 0.0,
         "avg_z_score": 0.0,
@@ -1195,7 +1229,7 @@
         ]
       },
       "properties": {
-        "cluster_id": 32,
+        "cluster_id": 33,
         "centroid_lat": 12.917987924999998,
         "centroid_lon": 77.55302792500001,
         "hazard_type": "Pothole",
@@ -1206,12 +1240,12 @@
         "priority": "P1 (Urgent Dispatch)",
         "repair_status": "Pending Emergency Repair",
         "action_recommendation": "Emergency Cold-mix Patching & Compaction",
-        "est_area_cm2": 1207.375,
-        "est_depth_cm": 2.5,
-        "asphalt_volume_liters": 1.51,
-        "asphalt_mass_kg": 3.55,
-        "repair_cost_inr": 460,
-        "repair_cost_usd": 15.0,
+        "est_area_cm2": 19745.5,
+        "est_depth_cm": 3.4,
+        "asphalt_volume_liters": 33.57,
+        "asphalt_mass_kg": 78.89,
+        "repair_cost_inr": 3850,
+        "repair_cost_usd": 61.28,
         "total_hits": 4,
         "unique_rides": 1,
         "max_z_score": 0.0,
@@ -1226,14 +1260,14 @@
       "geometry": {
         "type": "Point",
         "coordinates": [
-          77.55464834166668,
-          12.918811033333334
+          77.55460000000001,
+          12.918685966666667
         ]
       },
       "properties": {
-        "cluster_id": 33,
-        "centroid_lat": 12.918811033333334,
-        "centroid_lon": 77.55464834166668,
+        "cluster_id": 34,
+        "centroid_lat": 12.918685966666667,
+        "centroid_lon": 77.55460000000001,
         "hazard_type": "Pothole",
         "severity": "Severe",
         "confidence": "High (Multi-Ride Consensus)",
@@ -1242,13 +1276,50 @@
         "priority": "P1 (Urgent Dispatch)",
         "repair_status": "Pending Emergency Repair",
         "action_recommendation": "Emergency Cold-mix Patching & Compaction",
-        "est_area_cm2": 2719.0833333333335,
-        "est_depth_cm": 2.5,
-        "asphalt_volume_liters": 3.4,
-        "asphalt_mass_kg": 7.99,
-        "repair_cost_inr": 660,
-        "repair_cost_usd": 15.19,
-        "total_hits": 12,
+        "est_area_cm2": 18276.866666666665,
+        "est_depth_cm": 3.4,
+        "asphalt_volume_liters": 31.07,
+        "asphalt_mass_kg": 73.01,
+        "repair_cost_inr": 3585,
+        "repair_cost_usd": 57.46,
+        "total_hits": 3,
+        "unique_rides": 2,
+        "max_z_score": 0.0,
+        "avg_z_score": 0.0,
+        "contributing_rides": [
+          "Three",
+          "two"
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          77.5546616625,
+          12.9188382625
+        ]
+      },
+      "properties": {
+        "cluster_id": 35,
+        "centroid_lat": 12.9188382625,
+        "centroid_lon": 77.5546616625,
+        "hazard_type": "Pothole",
+        "severity": "Severe",
+        "confidence": "High (Multi-Ride Consensus)",
+        "confidence_level": 3,
+        "lifecycle_stage": "Corroborated Defect",
+        "priority": "P1 (Urgent Dispatch)",
+        "repair_status": "Pending Emergency Repair",
+        "action_recommendation": "Emergency Cold-mix Patching & Compaction",
+        "est_area_cm2": 15103.925,
+        "est_depth_cm": 3.4,
+        "asphalt_volume_liters": 25.68,
+        "asphalt_mass_kg": 60.35,
+        "repair_cost_inr": 3016,
+        "repair_cost_usd": 49.23,
+        "total_hits": 8,
         "unique_rides": 2,
         "max_z_score": 0.0,
         "avg_z_score": 0.0,
@@ -1268,7 +1339,7 @@
         ]
       },
       "properties": {
-        "cluster_id": 34,
+        "cluster_id": 36,
         "centroid_lat": 12.9190569,
         "centroid_lon": 77.5546881,
         "hazard_type": "Pothole",
@@ -1279,13 +1350,13 @@
         "priority": "P1 (Urgent Dispatch)",
         "repair_status": "Pending Emergency Repair",
         "action_recommendation": "Emergency Cold-mix Patching & Compaction",
-        "est_area_cm2": 2318.4,
-        "est_depth_cm": 2.5,
-        "asphalt_volume_liters": 2.9,
-        "asphalt_mass_kg": 6.82,
-        "repair_cost_inr": 607,
-        "repair_cost_usd": 15.0,
-        "total_hits": 1,
+        "est_area_cm2": 25000.0,
+        "est_depth_cm": 3.4,
+        "asphalt_volume_liters": 42.5,
+        "asphalt_mass_kg": 99.88,
+        "repair_cost_inr": 4795,
+        "repair_cost_usd": 74.92,
+        "total_hits": 2,
         "unique_rides": 1,
         "max_z_score": 0.0,
         "avg_z_score": 0.0,
@@ -1299,14 +1370,14 @@
       "geometry": {
         "type": "Point",
         "coordinates": [
-          77.55233473333334,
-          12.915658883333334
+          77.55232798,
+          12.91565732
         ]
       },
       "properties": {
-        "cluster_id": 35,
-        "centroid_lat": 12.915658883333334,
-        "centroid_lon": 77.55233473333334,
+        "cluster_id": 37,
+        "centroid_lat": 12.91565732,
+        "centroid_lon": 77.55232798,
         "hazard_type": "Pothole",
         "severity": "Severe",
         "confidence": "Medium (Strong Single-Ride Impact)",
@@ -1315,13 +1386,13 @@
         "priority": "P1 (Urgent Dispatch)",
         "repair_status": "Pending Emergency Repair",
         "action_recommendation": "Emergency Cold-mix Patching & Compaction",
-        "est_area_cm2": 2069.866666666667,
-        "est_depth_cm": 2.5,
-        "asphalt_volume_liters": 2.59,
-        "asphalt_mass_kg": 6.09,
-        "repair_cost_inr": 574,
-        "repair_cost_usd": 15.0,
-        "total_hits": 6,
+        "est_area_cm2": 23141.52,
+        "est_depth_cm": 3.4,
+        "asphalt_volume_liters": 39.34,
+        "asphalt_mass_kg": 92.45,
+        "repair_cost_inr": 4460,
+        "repair_cost_usd": 70.09,
+        "total_hits": 5,
         "unique_rides": 1,
         "max_z_score": 0.0,
         "avg_z_score": 0.0,
@@ -1340,7 +1411,7 @@
         ]
       },
       "properties": {
-        "cluster_id": 36,
+        "cluster_id": 38,
         "centroid_lat": 12.9159017,
         "centroid_lon": 77.5525217,
         "hazard_type": "Pothole",
@@ -1351,12 +1422,12 @@
         "priority": "P1 (Urgent Dispatch)",
         "repair_status": "Pending Emergency Repair",
         "action_recommendation": "Emergency Cold-mix Patching & Compaction",
-        "est_area_cm2": 5186.266666666667,
-        "est_depth_cm": 2.5,
-        "asphalt_volume_liters": 6.48,
-        "asphalt_mass_kg": 15.23,
-        "repair_cost_inr": 985,
-        "repair_cost_usd": 19.9,
+        "est_area_cm2": 25000.0,
+        "est_depth_cm": 3.4,
+        "asphalt_volume_liters": 42.5,
+        "asphalt_mass_kg": 99.88,
+        "repair_cost_inr": 4795,
+        "repair_cost_usd": 74.92,
         "total_hits": 3,
         "unique_rides": 1,
         "max_z_score": 0.0,
@@ -1371,14 +1442,14 @@
       "geometry": {
         "type": "Point",
         "coordinates": [
-          77.55258,
-          12.916095
+          77.552565,
+          12.9160325
         ]
       },
       "properties": {
-        "cluster_id": 37,
-        "centroid_lat": 12.916095,
-        "centroid_lon": 77.55258,
+        "cluster_id": 39,
+        "centroid_lat": 12.9160325,
+        "centroid_lon": 77.552565,
         "hazard_type": "Pothole",
         "severity": "Severe",
         "confidence": "Medium (Strong Single-Ride Impact)",
@@ -1387,13 +1458,49 @@
         "priority": "P1 (Urgent Dispatch)",
         "repair_status": "Pending Emergency Repair",
         "action_recommendation": "Emergency Cold-mix Patching & Compaction",
-        "est_area_cm2": 1709.8,
-        "est_depth_cm": 2.5,
-        "asphalt_volume_liters": 2.14,
-        "asphalt_mass_kg": 5.03,
-        "repair_cost_inr": 526,
-        "repair_cost_usd": 15.0,
+        "est_area_cm2": 25000.0,
+        "est_depth_cm": 3.4,
+        "asphalt_volume_liters": 42.5,
+        "asphalt_mass_kg": 99.88,
+        "repair_cost_inr": 4795,
+        "repair_cost_usd": 74.92,
         "total_hits": 2,
+        "unique_rides": 1,
+        "max_z_score": 0.0,
+        "avg_z_score": 0.0,
+        "contributing_rides": [
+          "two"
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          77.5526133,
+          12.91659
+        ]
+      },
+      "properties": {
+        "cluster_id": 40,
+        "centroid_lat": 12.91659,
+        "centroid_lon": 77.5526133,
+        "hazard_type": "Pothole",
+        "severity": "Severe",
+        "confidence": "Medium (Strong Single-Ride Impact)",
+        "confidence_level": 2,
+        "lifecycle_stage": "Active Defect",
+        "priority": "P1 (Urgent Dispatch)",
+        "repair_status": "Pending Emergency Repair",
+        "action_recommendation": "Emergency Cold-mix Patching & Compaction",
+        "est_area_cm2": 25000.0,
+        "est_depth_cm": 3.4,
+        "asphalt_volume_liters": 42.5,
+        "asphalt_mass_kg": 99.88,
+        "repair_cost_inr": 4795,
+        "repair_cost_usd": 74.92,
+        "total_hits": 1,
         "unique_rides": 1,
         "max_z_score": 0.0,
         "avg_z_score": 0.0,
@@ -1412,7 +1519,7 @@
         ]
       },
       "properties": {
-        "cluster_id": 38,
+        "cluster_id": 41,
         "centroid_lat": 12.9171167,
         "centroid_lon": 77.55264,
         "hazard_type": "Pothole",
@@ -1423,12 +1530,12 @@
         "priority": "P1 (Urgent Dispatch)",
         "repair_status": "Pending Emergency Repair",
         "action_recommendation": "Emergency Cold-mix Patching & Compaction",
-        "est_area_cm2": 1899.2,
-        "est_depth_cm": 2.5,
-        "asphalt_volume_liters": 2.37,
-        "asphalt_mass_kg": 5.57,
-        "repair_cost_inr": 551,
-        "repair_cost_usd": 15.0,
+        "est_area_cm2": 24165.5,
+        "est_depth_cm": 3.4,
+        "asphalt_volume_liters": 41.08,
+        "asphalt_mass_kg": 96.54,
+        "repair_cost_inr": 4644,
+        "repair_cost_usd": 72.75,
         "total_hits": 1,
         "unique_rides": 1,
         "max_z_score": 0.0,
@@ -1448,7 +1555,7 @@
         ]
       },
       "properties": {
-        "cluster_id": 39,
+        "cluster_id": 42,
         "centroid_lat": 12.9175683,
         "centroid_lon": 77.5526933,
         "hazard_type": "Pothole",
@@ -1459,12 +1566,12 @@
         "priority": "P1 (Urgent Dispatch)",
         "repair_status": "Pending Emergency Repair",
         "action_recommendation": "Emergency Cold-mix Patching & Compaction",
-        "est_area_cm2": 6265.0,
-        "est_depth_cm": 2.5,
-        "asphalt_volume_liters": 7.83,
-        "asphalt_mass_kg": 18.4,
-        "repair_cost_inr": 1128,
-        "repair_cost_usd": 21.96,
+        "est_area_cm2": 25000.0,
+        "est_depth_cm": 3.4,
+        "asphalt_volume_liters": 42.5,
+        "asphalt_mass_kg": 99.88,
+        "repair_cost_inr": 4795,
+        "repair_cost_usd": 74.92,
         "total_hits": 1,
         "unique_rides": 1,
         "max_z_score": 0.0,
@@ -1484,7 +1591,7 @@
         ]
       },
       "properties": {
-        "cluster_id": 40,
+        "cluster_id": 43,
         "centroid_lat": 12.9191333,
         "centroid_lon": 77.55478,
         "hazard_type": "Pothole",
@@ -1495,12 +1602,48 @@
         "priority": "P2 (Scheduled Maintenance)",
         "repair_status": "Queued for Maintenance",
         "action_recommendation": "Skin Patching & Bitumen Sealing",
-        "est_area_cm2": 1218.0,
-        "est_depth_cm": 2.5,
-        "asphalt_volume_liters": 1.52,
-        "asphalt_mass_kg": 3.57,
-        "repair_cost_inr": 461,
-        "repair_cost_usd": 15.0,
+        "est_area_cm2": 25000.0,
+        "est_depth_cm": 3.4,
+        "asphalt_volume_liters": 42.5,
+        "asphalt_mass_kg": 99.88,
+        "repair_cost_inr": 4795,
+        "repair_cost_usd": 74.92,
+        "total_hits": 1,
+        "unique_rides": 1,
+        "max_z_score": 0.0,
+        "avg_z_score": 0.0,
+        "contributing_rides": [
+          "two"
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          77.55479,
+          12.9192333
+        ]
+      },
+      "properties": {
+        "cluster_id": 44,
+        "centroid_lat": 12.9192333,
+        "centroid_lon": 77.55479,
+        "hazard_type": "Pothole",
+        "severity": "Moderate",
+        "confidence": "Low (Single Pass Anomaly)",
+        "confidence_level": 1,
+        "lifecycle_stage": "Monitoring",
+        "priority": "P2 (Scheduled Maintenance)",
+        "repair_status": "Queued for Maintenance",
+        "action_recommendation": "Skin Patching & Bitumen Sealing",
+        "est_area_cm2": 25000.0,
+        "est_depth_cm": 3.4,
+        "asphalt_volume_liters": 42.5,
+        "asphalt_mass_kg": 99.88,
+        "repair_cost_inr": 4795,
+        "repair_cost_usd": 74.92,
         "total_hits": 1,
         "unique_rides": 1,
         "max_z_score": 0.0,

@@ -1,8 +1,7 @@
-timestamp,latitude,longitude,speed,z_score,Severity,Hazard_Type,est_area_cm2,est_depth_cm,image_evidence
-1785407886808,0.0,0.0,0.0,1.49,Low,Pothole,150.0,2.5,evidence_003s_5.jpg
-1785407887308,0.0,0.0,0.0,0.63,Low,Pothole,150.0,2.5,evidence_003s_11.jpg
-1785407888308,12.9223976,77.5016006,0.0,0.63,Low,Pothole,150.0,2.5,evidence_004s_12.jpg
-1785407888808,12.9223976,77.5016006,0.0,0.75,Low,Pothole,150.0,2.5,evidence_005s_14.jpg
-1785407889308,12.9223976,77.5016006,0.0,1.49,Low,Pothole,150.0,2.5,evidence_005s_13.jpg
-1785407891808,12.9223976,77.5016006,0.0,5.32,Severe,Speedbreaker,957.6,8.8,
-1785407894308,12.9223956,77.5016141,0.4048424661,2.97,Moderate,Pothole,1819.4,4.9,evidence_011s_15.jpg
+timestamp,latitude,longitude,speed,z_score,Severity,Hazard_Type,est_area_cm2,est_depth_cm,asphalt_mass_kg,repair_cost_inr,irc_category,irc_code,irc_action,image_evidence
+1785407886808,0.0,0.0,0.0,1.49,Low,Pothole,25000.0,3.4,99.88,4795,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",evidence_003s_1.jpg
+1785407887308,0.0,0.0,0.0,0.63,Low,Pothole,3719.9,3.4,14.85,968,Category B (Standard Pothole Cavity),IRC:SP:77-Clause 4.1,"Square cut, edge priming & Cold-Mix Bituminous Patching",evidence_003s_11.jpg
+1785407888308,12.9223976,77.5016006,0.0,0.63,Low,Pothole,2830.0,3.4,11.3,808,Category B (Standard Pothole Cavity),IRC:SP:77-Clause 4.1,"Square cut, edge priming & Cold-Mix Bituminous Patching",evidence_004s_12.jpg
+1785407888808,12.9223976,77.5016006,0.0,0.75,Low,Pothole,2379.7,3.4,9.52,728,Category B (Standard Pothole Cavity),IRC:SP:77-Clause 4.1,"Square cut, edge priming & Cold-Mix Bituminous Patching",evidence_005s_15.jpg
+1785407889308,12.9223976,77.5016006,0.0,1.49,Low,Pothole,2962.9,3.4,11.84,833,Category B (Standard Pothole Cavity),IRC:SP:77-Clause 4.1,"Square cut, edge priming & Cold-Mix Bituminous Patching",evidence_005s_14.jpg
+1785407891808,12.9223976,77.5016006,0.0,5.32,Severe,Speedbreaker,957.6,8.8,9.89,745,Category C (Structural Base / Sub-base Failure),IRC:82-Clause 6.4,"Deep milling, granular sub-base recompaction & DBM overlay",

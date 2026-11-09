@@ -163,7 +163,7 @@ def generate_inspection_pdf(fused_csv_path, output_pdf_path=None, title="RoadSen
     header_data = [
         [
             Paragraph("<b>ROADSENSE</b> | Infrastructure Intelligence", title_style),
-            Paragraph(f"<b>DATE:</b> {datetime.now().strftime('%B %d, %Y')}<br/><b>STANDARD:</b> ASTM D6433 / IRI", subtitle_style)
+            Paragraph(f"<b>DATE:</b> {datetime.now().strftime('%B %d, %Y')}<br/><b>STANDARDS:</b> ASTM D6433 | IRC:SP:77 / IRC:82", subtitle_style)
         ]
     ]
     header_table = Table(header_data, colWidths=[4.0 * inch, 3.2 * inch])
@@ -229,41 +229,76 @@ def generate_inspection_pdf(fused_csv_path, output_pdf_path=None, title="RoadSen
     elements.append(Paragraph("Priority Maintenance Dispatch Table (Top Critical Hazards)", heading_style))
     potholes_df = metrics['potholes_df']
     
-    work_rows = [["ID", "Type", "Severity", "Latitude", "Longitude", "Dimensions", "Bitumen Mass", "Est. Budget", "Action"]]
+    work_rows = [
+        [
+            Paragraph("<b>#</b>", cell_bold),
+            Paragraph("<b>Hazard / Sev</b>", cell_bold),
+            Paragraph("<b>IRC Spec</b>", cell_bold),
+            Paragraph("<b>Coordinates</b>", cell_bold),
+            Paragraph("<b>Dimensions</b>", cell_bold),
+            Paragraph("<b>Bitumen</b>", cell_bold),
+            Paragraph("<b>Est. Cost</b>", cell_bold),
+            Paragraph("<b>Prescribed Action</b>", cell_bold)
+        ]
+    ]
     
     if not potholes_df.empty:
         # Sort by peak severity / z_score
         sorted_potholes = potholes_df.sort_values(by='z_score', ascending=False).head(12)
         idx_count = 1
         for _, row in sorted_potholes.iterrows():
-            lat = f"{row.get('latitude', 0.0):.6f}"
-            lon = f"{row.get('longitude', 0.0):.6f}"
+            lat = f"{row.get('latitude', 0.0):.5f}"
+            lon = f"{row.get('longitude', 0.0):.5f}"
             sev = str(row.get('Severity', 'Moderate'))
             htype = str(row.get('Hazard_Type', 'Pothole'))
             area = f"{row.get('est_area_cm2', 250.0):.0f}cm²"
             depth = f"{row.get('est_depth_cm', 3.5):.1f}cm"
-            dims = f"{area} x {depth}"
-            mass = f"{row.get('asphalt_mass_kg', 3.2):.1f} kg"
+            dims = f"{area}<br/>depth {depth}"
+            mass = f"<b>{row.get('asphalt_mass_kg', 3.2):.1f} kg</b>"
             cost = f"Rs.{row.get('repair_cost_inr', 450)}"
-            action = "Emergency Patch" if sev == 'Severe' else "Routine Repair"
+            
+            # IRC specifications
+            irc_cat = str(row.get('irc_category', 'B'))
+            irc_code = str(row.get('irc_code', 'IRC:SP:77'))
+            irc_spec = f"<b>Cat {irc_cat}</b><br/>{irc_code}"
+            
+            irc_act = str(row.get('irc_action', 'Cold-Mix Bituminous Patching'))
+            
+            sev_color = '#DC2626' if sev == 'Severe' else ('#D97706' if sev == 'Moderate' else '#2563EB')
+            type_sev = f"<b>{htype}</b><br/><font color='{sev_color}'>{sev}</font>"
+            coords = f"{lat},<br/>{lon}"
             
             work_rows.append([
-                f"#{idx_count:02d}", htype, sev, lat, lon, dims, mass, cost, action
+                Paragraph(f"#{idx_count:02d}", cell_style),
+                Paragraph(type_sev, cell_style),
+                Paragraph(irc_spec, cell_style),
+                Paragraph(coords, cell_style),
+                Paragraph(dims, cell_style),
+                Paragraph(mass, cell_style),
+                Paragraph(cost, cell_style),
+                Paragraph(irc_act, cell_style)
             ])
             idx_count += 1
     else:
-        work_rows.append(["—", "None", "—", "—", "—", "—", "—", "—", "No critical defects logged"])
+        work_rows.append([
+            Paragraph("—", cell_style),
+            Paragraph("None", cell_style),
+            Paragraph("—", cell_style),
+            Paragraph("—", cell_style),
+            Paragraph("—", cell_style),
+            Paragraph("—", cell_style),
+            Paragraph("—", cell_style),
+            Paragraph("No critical defects logged", cell_style)
+        ])
         
-    work_table = Table(work_rows, colWidths=[0.4*inch, 0.9*inch, 0.8*inch, 1.1*inch, 1.1*inch, 0.9*inch, 0.8*inch, 0.8*inch, 1.0*inch])
+    work_table = Table(work_rows, colWidths=[0.35*inch, 1.05*inch, 1.05*inch, 1.15*inch, 0.95*inch, 0.75*inch, 0.75*inch, 1.35*inch])
     work_table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1E293B')),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 8),
         ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#CBD5E1')),
-        ('FONTSIZE', (0, 1), (-1, -1), 7.5),
         ('TOPPADDING', (0, 0), (-1, -1), 4),
         ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
         ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#F8FAFC')])
     ]))
     elements.append(work_table)
@@ -306,7 +341,7 @@ def generate_inspection_pdf(fused_csv_path, output_pdf_path=None, title="RoadSen
     # Export CSV Work-Order for contractor dispatch
     csv_out_path = os.path.join(ride_dir, "inspection_work_order.csv")
     if not potholes_df.empty:
-        dispatch_cols = [c for c in ['timestamp', 'latitude', 'longitude', 'speed', 'z_score', 'Severity', 'Hazard_Type', 'est_area_cm2', 'est_depth_cm', 'image_evidence'] if c in potholes_df.columns]
+        dispatch_cols = [c for c in ['timestamp', 'latitude', 'longitude', 'speed', 'z_score', 'Severity', 'Hazard_Type', 'est_area_cm2', 'est_depth_cm', 'asphalt_mass_kg', 'repair_cost_inr', 'irc_category', 'irc_code', 'irc_action', 'image_evidence'] if c in potholes_df.columns]
         potholes_df[dispatch_cols].to_csv(csv_out_path, index=False)
         print(f"[SUCCESS] Contractor Dispatch CSV created: {csv_out_path}")
         

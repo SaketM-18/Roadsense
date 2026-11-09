@@ -30,14 +30,19 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
-# Advanced Computer Vision Intelligence (SAHI, 3D Rim Gradient, Kinematics, Consensus)
+# Advanced Computer Vision Intelligence (SAHI, 3D Rim Gradient, Kinematics, Consensus, Photogrammetry & Kalman Tracking, Zero-DCE, Anonymization, IRC)
 try:
     from cv_pipeline.advanced_detector import (
         sahi_corridor_inference,
         fuse_ensemble_candidates,
         is_flat_shadow,
         check_perspective_kinematics,
-        suppress_duplicate_boxes
+        suppress_duplicate_boxes,
+        PotholeKalmanTracker,
+        compute_metric_pothole_dimensions,
+        zero_dce_low_light_enhancement,
+        anonymize_privacy_regions,
+        classify_irc_maintenance_code
     )
     HAVE_ADVANCED_CV = True
 except ImportError:
@@ -47,7 +52,12 @@ except ImportError:
             fuse_ensemble_candidates,
             is_flat_shadow,
             check_perspective_kinematics,
-            suppress_duplicate_boxes
+            suppress_duplicate_boxes,
+            PotholeKalmanTracker,
+            compute_metric_pothole_dimensions,
+            zero_dce_low_light_enhancement,
+            anonymize_privacy_regions,
+            classify_irc_maintenance_code
         )
         HAVE_ADVANCED_CV = True
     except ImportError:
@@ -356,9 +366,15 @@ def run_yolo(video_path, conf_threshold=0.40, evidence_dir=None, model_mode='ens
             merged = cv2.merge((cl, a_channel, b_channel))
             enhanced = cv2.cvtColor(merged, cv2.COLOR_LAB2BGR)
             
-            cand_boxes_det = []
+            # Zero-DCE Dynamic Illumination Enhancer for night, dusk & shadow roadways
+            if HAVE_ADVANCED_CV:
+                enhanced = zero_dce_low_light_enhancement(enhanced)
+            
             cand_boxes_det = []
             cand_boxes_seg = []
+
+            # Adaptive SAHI cadence (runs horizon corridor slicing every 3rd sampled frame ~0.5s)
+            is_sahi_cadence = ((frame_idx // 5) % 3 == 0)
 
             # 1. High-Recall Detector (Stage 1)
             if model_det is not None:
@@ -374,13 +390,15 @@ def run_yolo(video_path, conf_threshold=0.40, evidence_dir=None, model_mode='ens
                                     'box': (bx1, by1, bx2, by2),
                                     'conf': float(box.conf[0])
                                 })
-                if HAVE_ADVANCED_CV:
+                if HAVE_ADVANCED_CV and is_sahi_cadence:
                     sahi_det = sahi_corridor_inference(model_det, enhanced, conf_threshold=conf_threshold)
                     cand_boxes_det.extend([s for s in sahi_det if (s['box'][1] + s['box'][3]) / 2 < mask_y])
                     cand_boxes_det = suppress_duplicate_boxes(cand_boxes_det, iou_thresh=0.45)
 
-            # 2. Polygon Instance Segmenter (Stage 2)
-            if model_seg is not None:
+            # 2. Polygon Instance Segmenter (Stage 2 - Cascaded Execution)
+            # Only run heavy segmentation if Stage 1 found candidates OR active tracks need contour refinement
+            should_run_seg = (model_seg is not None) and (len(cand_boxes_det) > 0 or len(active_tracks) > 0)
+            if should_run_seg:
                 r_seg = model_seg.predict(enhanced, conf=conf_threshold, verbose=False)
                 for r in r_seg:
                     has_m = hasattr(r, 'masks') and r.masks is not None and len(r.masks) > 0
@@ -404,7 +422,7 @@ def run_yolo(video_path, conf_threshold=0.40, evidence_dir=None, model_mode='ens
                                     'polygon': poly,
                                     'seg_area_pct': s_area
                                 })
-                if HAVE_ADVANCED_CV:
+                if HAVE_ADVANCED_CV and is_sahi_cadence:
                     sahi_seg = sahi_corridor_inference(model_seg, enhanced, conf_threshold=conf_threshold)
                     cand_boxes_seg.extend([s for s in sahi_seg if (s['box'][1] + s['box'][3]) / 2 < mask_y])
                     cand_boxes_seg = suppress_duplicate_boxes(cand_boxes_seg, iou_thresh=0.45)
@@ -468,12 +486,18 @@ def run_yolo(video_path, conf_threshold=0.40, evidence_dir=None, model_mode='ens
                         'frame': frame
                     })
 
+            # Predict Kalman states for all active tracks
+            if HAVE_ADVANCED_CV:
+                for track in active_tracks:
+                    if hasattr(track, 'predict'):
+                        track.predict()
+
             # Match current detections to active tracks
             matched_indices = set()
             for track in active_tracks:
                 best_iou = 0.0
                 best_box_idx = -1
-                t_box = track['box']
+                t_box = track.box if hasattr(track, 'box') else track['box']
                 t_cx = (t_box[0] + t_box[2]) / 2.0
                 t_cy = (t_box[1] + t_box[3]) / 2.0
 
@@ -493,67 +517,115 @@ def run_yolo(video_path, conf_threshold=0.40, evidence_dir=None, model_mode='ens
                 if best_box_idx >= 0 and best_iou >= 0.15:
                     matched_indices.add(best_box_idx)
                     cb = current_boxes[best_box_idx]
-                    track['hits'] += 1
-                    track['last_seen_frame'] = frame_idx
-                    track['last_time_sec'] = time_sec
-                    track['box'] = cb['box']
-                    if 'first_box' not in track:
-                        track['first_box'] = cb['box']
-                    if cb['conf'] > track['conf']:
-                        track['conf'] = cb['conf']
-                        track['best_frame'] = cb['frame'].copy()
-                        track['best_box'] = cb['box']
-                        track['polygon'] = cb['polygon']
-                        track['seg_area_pct'] = cb['seg_area_pct']
+                    if HAVE_ADVANCED_CV and isinstance(track, PotholeKalmanTracker):
+                        track.update(cb['box'], conf=cb['conf'], polygon=cb.get('polygon'),
+                                     frame=cb.get('frame'), seg_area_pct=cb.get('seg_area_pct'),
+                                     frame_idx=frame_idx, time_sec=time_sec)
+                    else:
+                        track['hits'] += 1
+                        track['last_seen_frame'] = frame_idx
+                        track['last_time_sec'] = time_sec
+                        track['box'] = cb['box']
+                        if 'first_box' not in track:
+                            track['first_box'] = cb['box']
+                        if cb['conf'] > track['conf']:
+                            track['conf'] = cb['conf']
+                            track['best_frame'] = cb['frame'].copy()
+                            track['best_box'] = cb['box']
+                            track['polygon'] = cb.get('polygon')
+                            track['seg_area_pct'] = cb.get('seg_area_pct')
 
             # Unmatched detections start new candidate tracklets
             for i, cb in enumerate(current_boxes):
                 if i not in matched_indices:
-                    active_tracks.append({
-                        'first_time_sec': time_sec,
-                        'last_time_sec': time_sec,
-                        'first_seen_frame': frame_idx,
-                        'last_seen_frame': frame_idx,
-                        'hits': 1,
-                        'box': cb['box'],
-                        'first_box': cb['box'],
-                        'best_box': cb['box'],
-                        'conf': cb['conf'],
-                        'polygon': cb['polygon'],
-                        'seg_area_pct': cb['seg_area_pct'],
-                        'best_frame': cb['frame'].copy()
-                    })
+                    if HAVE_ADVANCED_CV:
+                        active_tracks.append(PotholeKalmanTracker(
+                            bbox=cb['box'],
+                            conf=cb['conf'],
+                            polygon=cb.get('polygon'),
+                            frame=cb.get('frame'),
+                            seg_area_pct=cb.get('seg_area_pct'),
+                            frame_idx=frame_idx,
+                            time_sec=time_sec
+                        ))
+                    else:
+                        active_tracks.append({
+                            'first_time_sec': time_sec,
+                            'last_time_sec': time_sec,
+                            'first_seen_frame': frame_idx,
+                            'last_seen_frame': frame_idx,
+                            'hits': 1,
+                            'box': cb['box'],
+                            'first_box': cb['box'],
+                            'best_box': cb['box'],
+                            'conf': cb['conf'],
+                            'polygon': cb.get('polygon'),
+                            'seg_area_pct': cb.get('seg_area_pct'),
+                            'best_frame': cb['frame'].copy()
+                        })
 
             # Expire tracklets not seen for > 12 video frames
             remaining_tracks = []
             for track in active_tracks:
-                if frame_idx - track['last_seen_frame'] > 12:
+                t_last_seen = track.last_seen_frame if hasattr(track, 'last_seen_frame') else track['last_seen_frame']
+                if frame_idx - t_last_seen > 12:
                     # Optical Perspective Kinematics check
                     if HAVE_ADVANCED_CV:
                         is_valid, conf_bonus = check_perspective_kinematics(track)
                         if not is_valid:
                             continue  # Drop receding or upward-moving false alarms
-                        track['conf'] = min(0.99, max(0.1, track['conf'] + conf_bonus))
+                        t_conf = track.conf if hasattr(track, 'conf') else track['conf']
+                        new_conf = min(0.99, max(0.1, t_conf + conf_bonus))
+                        if hasattr(track, 'conf'):
+                            track.conf = new_conf
+                        else:
+                            track['conf'] = new_conf
 
-                    if track['hits'] >= 2 or track['conf'] >= 0.75:
-                        bx1, by1, bx2, by2 = track['best_box']
+                    t_hits = track.hits if hasattr(track, 'hits') else track['hits']
+                    t_conf = track.conf if hasattr(track, 'conf') else track['conf']
+                    t_best_box = track.best_box if hasattr(track, 'best_box') else track['best_box']
+                    t_best_frame = track.best_frame if hasattr(track, 'best_frame') else track['best_frame']
+                    t_polygon = track.polygon if hasattr(track, 'polygon') else track.get('polygon')
+                    t_seg_area = track.seg_area_pct if hasattr(track, 'seg_area_pct') else track.get('seg_area_pct')
+                    t_first_time = track.first_time_sec if hasattr(track, 'first_time_sec') else track['first_time_sec']
+
+                    if t_hits >= 2 or t_conf >= 0.75:
+                        bx1, by1, bx2, by2 = t_best_box
                         bw = bx2 - bx1
                         bh = by2 - by1
                         
+                        # True Photogrammetric Metric Dimensions via IPM
+                        if HAVE_ADVANCED_CV:
+                            dims = compute_metric_pothole_dimensions(
+                                box=t_best_box,
+                                polygon=t_polygon,
+                                frame_shape=(h, w)
+                            )
+                            p_area_cm2 = dims['area_cm2']
+                            p_depth_cm = dims['depth_cm']
+                            p_vol_liters = dims['volume_liters']
+                            p_mass_kg = dims['mass_kg']
+                            p_dist_m = dims['ground_distance_m']
+                        else:
+                            p_area_cm2 = round(max(150.0, (bw * bh) / (w * h) * 100 * 140.0), 1)
+                            p_depth_cm = 3.5
+                            p_vol_liters = round(0.5 * p_area_cm2 * p_depth_cm * 0.001, 2)
+                            p_mass_kg = round(p_vol_liters * 2.35, 2)
+                            p_dist_m = 3.0
+
                         # Use true polygon segmentation area if available, else box area
-                        if track.get('seg_area_pct') is not None and track['seg_area_pct'] > 0:
-                            box_area_pct = track['seg_area_pct']
+                        if t_seg_area is not None and t_seg_area > 0:
+                            box_area_pct = t_seg_area
                         else:
                             box_area_pct = round((bw * bh) / (w * h) * 100, 2)
                         
                         snapshot_file = None
-                        if evidence_dir and snapshot_count < 25:
-                            snap_frame = track['best_frame']
-                            poly = track.get('polygon')
+                        if evidence_dir and snapshot_count < 25 and t_best_frame is not None:
+                            snap_frame = t_best_frame.copy()
                             
                             # Render semi-transparent polygon contour mask if segmentation is active
-                            if poly is not None and len(poly) >= 3:
-                                pts = np.array(poly, dtype=np.int32)
+                            if t_polygon is not None and len(t_polygon) >= 3:
+                                pts = np.array(t_polygon, dtype=np.int32)
                                 overlay = snap_frame.copy()
                                 cv2.fillPoly(overlay, [pts], (0, 255, 0))
                                 cv2.addWeighted(overlay, 0.4, snap_frame, 0.6, 0, snap_frame)
@@ -561,20 +633,30 @@ def run_yolo(video_path, conf_threshold=0.40, evidence_dir=None, model_mode='ens
                             else:
                                 cv2.rectangle(snap_frame, (bx1, by1), (bx2, by2), (0, 255, 0), 2)
                                 
-                            cv2.putText(snap_frame, f"Pothole: {int(track['conf']*100)}%", 
+                            cv2.putText(snap_frame, f"Pothole: {int(t_conf*100)}%", 
                                         (bx1, max(by1 - 8, 20)), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
-                            snapshot_name = f"evidence_{int(track['first_time_sec']):03d}s_{snapshot_count+1}.jpg"
+                            
+                            # On-Device Privacy Anonymizer (blurs bystander faces & vehicle plates)
+                            if HAVE_ADVANCED_CV:
+                                snap_frame = anonymize_privacy_regions(snap_frame, pothole_box=(bx1, by1, bx2, by2))
+                                
+                            snapshot_name = f"evidence_{int(t_first_time):03d}s_{snapshot_count+1}.jpg"
                             snap_path = os.path.join(evidence_dir, snapshot_name)
                             cv2.imwrite(snap_path, snap_frame)
                             snapshot_file = snapshot_name
                             snapshot_count += 1
 
                         detections.append({
-                            'time_sec': track['first_time_sec'],
-                            'conf': track['conf'],
+                            'time_sec': t_first_time,
+                            'conf': t_conf,
                             'box_area_pct': box_area_pct,
                             'snapshot': snapshot_file,
-                            'hits': track['hits']
+                            'hits': t_hits,
+                            'est_area_cm2': p_area_cm2,
+                            'est_depth_cm': p_depth_cm,
+                            'asphalt_volume_liters': p_vol_liters,
+                            'asphalt_mass_kg': p_mass_kg,
+                            'ground_distance_m': p_dist_m
                         })
                 else:
                     remaining_tracks.append(track)
@@ -590,44 +672,84 @@ def run_yolo(video_path, conf_threshold=0.40, evidence_dir=None, model_mode='ens
             is_valid, conf_bonus = check_perspective_kinematics(track)
             if not is_valid:
                 continue
-            track['conf'] = min(0.99, max(0.1, track['conf'] + conf_bonus))
+            t_conf = track.conf if hasattr(track, 'conf') else track['conf']
+            new_conf = min(0.99, max(0.1, t_conf + conf_bonus))
+            if hasattr(track, 'conf'):
+                track.conf = new_conf
+            else:
+                track['conf'] = new_conf
 
-        if track['hits'] >= 2 or track['conf'] >= 0.75:
-            bx1, by1, bx2, by2 = track['best_box']
+        t_hits = track.hits if hasattr(track, 'hits') else track['hits']
+        t_conf = track.conf if hasattr(track, 'conf') else track['conf']
+        t_best_box = track.best_box if hasattr(track, 'best_box') else track['best_box']
+        t_best_frame = track.best_frame if hasattr(track, 'best_frame') else track['best_frame']
+        t_polygon = track.polygon if hasattr(track, 'polygon') else track.get('polygon')
+        t_seg_area = track.seg_area_pct if hasattr(track, 'seg_area_pct') else track.get('seg_area_pct')
+        t_first_time = track.first_time_sec if hasattr(track, 'first_time_sec') else track['first_time_sec']
+
+        if t_hits >= 2 or t_conf >= 0.75:
+            bx1, by1, bx2, by2 = t_best_box
             bw = bx2 - bx1
             bh = by2 - by1
             
-            if track.get('seg_area_pct') is not None and track['seg_area_pct'] > 0:
-                box_area_pct = track['seg_area_pct']
+            if HAVE_ADVANCED_CV:
+                dims = compute_metric_pothole_dimensions(
+                    box=t_best_box,
+                    polygon=t_polygon,
+                    frame_shape=(h, w)
+                )
+                p_area_cm2 = dims['area_cm2']
+                p_depth_cm = dims['depth_cm']
+                p_vol_liters = dims['volume_liters']
+                p_mass_kg = dims['mass_kg']
+                p_dist_m = dims['ground_distance_m']
+            else:
+                p_area_cm2 = round(max(150.0, (bw * bh) / (w * h) * 100 * 140.0), 1)
+                p_depth_cm = 3.5
+                p_vol_liters = round(0.5 * p_area_cm2 * p_depth_cm * 0.001, 2)
+                p_mass_kg = round(p_vol_liters * 2.35, 2)
+                p_dist_m = 3.0
+
+            if t_seg_area is not None and t_seg_area > 0:
+                box_area_pct = t_seg_area
             else:
                 box_area_pct = round((bw * bh) / (w * h) * 100, 2)
             
             snapshot_file = None
-            if evidence_dir and snapshot_count < 25:
-                snap_frame = track['best_frame']
-                poly = track.get('polygon')
-                if poly is not None and len(poly) >= 3:
-                    pts = np.array(poly, dtype=np.int32)
+            if evidence_dir and snapshot_count < 25 and t_best_frame is not None:
+                snap_frame = t_best_frame.copy()
+                if t_polygon is not None and len(t_polygon) >= 3:
+                    pts = np.array(t_polygon, dtype=np.int32)
                     overlay = snap_frame.copy()
                     cv2.fillPoly(overlay, [pts], (0, 255, 0))
                     cv2.addWeighted(overlay, 0.4, snap_frame, 0.6, 0, snap_frame)
                     cv2.polylines(snap_frame, [pts], isClosed=True, color=(0, 255, 0), thickness=2)
                 else:
                     cv2.rectangle(snap_frame, (bx1, by1), (bx2, by2), (0, 255, 0), 2)
-                cv2.putText(snap_frame, f"Pothole: {int(track['conf']*100)}%", 
+                cv2.putText(snap_frame, f"Pothole: {int(t_conf*100)}%", 
                             (bx1, max(by1 - 8, 20)), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
-                snapshot_name = f"evidence_{int(track['first_time_sec']):03d}s_{snapshot_count+1}.jpg"
+                
+                # On-Device Privacy Anonymizer (blurs bystander faces & vehicle plates)
+                if HAVE_ADVANCED_CV:
+                    snap_frame = anonymize_privacy_regions(snap_frame, pothole_box=(bx1, by1, bx2, by2))
+                    
+                snapshot_name = f"evidence_{int(t_first_time):03d}s_{snapshot_count+1}.jpg"
                 snap_path = os.path.join(evidence_dir, snapshot_name)
                 cv2.imwrite(snap_path, snap_frame)
                 snapshot_file = snapshot_name
                 snapshot_count += 1
 
             detections.append({
-                'time_sec': track['first_time_sec'],
-                'conf': track['conf'],
+                'time_sec': t_first_time,
+                'conf': t_conf,
                 'box_area_pct': box_area_pct,
                 'snapshot': snapshot_file,
-                'hits': track['hits']
+                'hits': t_hits,
+                'est_area_cm2': p_area_cm2,
+                'est_depth_cm': p_depth_cm,
+                'asphalt_volume_liters': p_vol_liters,
+                'asphalt_mass_kg': p_mass_kg,
+                'ground_distance_m': p_dist_m
             })
 
     cap.release()
@@ -694,6 +816,10 @@ def fuse_data(detections, csv_path, output_path, lookahead_distance_m=3.5, defau
         area = det.get('box_area_pct', 0.0) if isinstance(det, dict) else 0.0
         conf = det.get('conf', 0.5) if isinstance(det, dict) else 0.5
         hits = det.get('hits', 1) if isinstance(det, dict) else 1
+        p_area = det.get('est_area_cm2') if isinstance(det, dict) else None
+        p_depth = det.get('est_depth_cm') if isinstance(det, dict) else None
+        p_vol = det.get('asphalt_volume_liters') if isinstance(det, dict) else None
+        p_mass = det.get('asphalt_mass_kg') if isinstance(det, dict) else None
         
         # Dynamic delay based on vehicle speed at timestamp t
         speed_window = df[(df['time_s'] >= t - 0.5) & (df['time_s'] <= t + 0.5)]
@@ -725,6 +851,14 @@ def fuse_data(detections, csv_path, output_path, lookahead_distance_m=3.5, defau
                     df.at[idx, 'image_evidence'] = snap
                 if area > 0:
                     df.at[idx, 'box_area_pct'] = max(float(df.at[idx, 'box_area_pct']), area)
+                if p_area is not None and p_area > 0:
+                    df.at[idx, 'est_area_cm2'] = p_area
+                if p_depth is not None and p_depth > 0:
+                    df.at[idx, 'est_depth_cm'] = p_depth
+                if p_vol is not None and p_vol > 0:
+                    df.at[idx, 'asphalt_volume_liters'] = p_vol
+                if p_mass is not None and p_mass > 0:
+                    df.at[idx, 'asphalt_mass_kg'] = p_mass
             verified_yolo_detections += 1
         # 2. Vision Ground Truth:
         # Either sensor telemetry is absent in this ride (GPS-only recording),
@@ -739,6 +873,14 @@ def fuse_data(detections, csv_path, output_path, lookahead_distance_m=3.5, defau
                     df.at[idx, 'image_evidence'] = snap
                 if area > 0:
                     df.at[idx, 'box_area_pct'] = max(float(df.at[idx, 'box_area_pct']), area)
+                if p_area is not None and p_area > 0:
+                    df.at[idx, 'est_area_cm2'] = p_area
+                if p_depth is not None and p_depth > 0:
+                    df.at[idx, 'est_depth_cm'] = p_depth
+                if p_vol is not None and p_vol > 0:
+                    df.at[idx, 'asphalt_volume_liters'] = p_vol
+                if p_mass is not None and p_mass > 0:
+                    df.at[idx, 'asphalt_mass_kg'] = p_mass
             verified_yolo_detections += 1
         else:
             # Single-frame weak detection on a confirmed smooth road with active sensor
@@ -768,10 +910,20 @@ def fuse_data(detections, csv_path, output_path, lookahead_distance_m=3.5, defau
     print(f"  Physical anomalies detected (Override): {sensor_anomalies}")
 
     # 4. Severity Assignment, Dimension Estimation & Physical Modeling
-    df['est_area_cm2'] = 0.0
-    df['est_depth_cm'] = 0.0
-    df['asphalt_volume_liters'] = 0.0
-    df['asphalt_mass_kg'] = 0.0
+    if 'est_area_cm2' not in df.columns:
+        df['est_area_cm2'] = 0.0
+    if 'est_depth_cm' not in df.columns:
+        df['est_depth_cm'] = 0.0
+    if 'asphalt_volume_liters' not in df.columns:
+        df['asphalt_volume_liters'] = 0.0
+    if 'asphalt_mass_kg' not in df.columns:
+        df['asphalt_mass_kg'] = 0.0
+    if 'irc_category' not in df.columns:
+        df['irc_category'] = 'None'
+    if 'irc_code' not in df.columns:
+        df['irc_code'] = 'None'
+    if 'irc_action' not in df.columns:
+        df['irc_action'] = 'None'
     df['repair_cost_inr'] = 0
     df['repair_cost_usd'] = 0.0
 
@@ -797,17 +949,42 @@ def fuse_data(detections, csv_path, output_path, lookahead_distance_m=3.5, defau
                 else:
                     df.at[idx, 'Severity'] = 'Low'
                 
-            # Dimensional modeling (physical surface area in cm² & depth in cm)
-            area_cm2 = round(max(150.0, area_pct * 140.0), 1) if area_pct > 0 else round(max(100.0, max(z, 1.0) * 180.0), 1)
-            depth_cm = round(min(12.0, max(2.5, max(z, 1.0) * 1.65)), 1)
+            # Dimensional modeling (True Photogrammetric dimensions with sensor shock refinement)
+            curr_area = float(row.get('est_area_cm2', 0.0))
+            curr_depth = float(row.get('est_depth_cm', 0.0))
             
-            # Parabolic cavity volume: V = 0.5 * Area * Depth * 10^-3 Liters
-            vol_liters = round(0.5 * area_cm2 * depth_cm * 0.001, 2)
-            # Compacted cold-mix bitumen density ~ 2.35 kg/L
-            mass_kg = round(vol_liters * 2.35, 2)
+            if curr_area > 0.0:
+                area_cm2 = curr_area
+                if z >= 1.5:
+                    depth_cm = round(min(14.0, max(2.5, curr_depth + 0.5 * z)), 1)
+                else:
+                    depth_cm = curr_depth
+            else:
+                area_cm2 = round(max(150.0, area_pct * 140.0), 1) if area_pct > 0 else round(max(100.0, max(z, 1.0) * 180.0), 1)
+                depth_cm = round(min(12.0, max(2.5, max(z, 1.0) * 1.65)), 1)
+            
+            curr_vol = float(row.get('asphalt_volume_liters', 0.0))
+            curr_mass = float(row.get('asphalt_mass_kg', 0.0))
+            if curr_vol > 0.0 and curr_mass > 0.0:
+                vol_liters = curr_vol
+                mass_kg = curr_mass
+            else:
+                # Parabolic cavity volume: V = 0.5 * Area * Depth * 10^-3 Liters
+                vol_liters = round(0.5 * area_cm2 * depth_cm * 0.001, 2)
+                # Compacted cold-mix bitumen density ~ 2.35 kg/L
+                mass_kg = round(vol_liters * 2.35, 2)
+            
             # Municipal CPWD / standard repair cost estimation
             cost_inr = int(max(350, round(mass_kg * 45.0 + 300.0)))
             cost_usd = round(max(15.0, mass_kg * 0.65 + 10.0), 2)
+            
+            # Indian Roads Congress (IRC:SP:77 & IRC:82) Standard Maintenance Classification
+            if HAVE_ADVANCED_CV:
+                irc_cat, irc_code, irc_act = classify_irc_maintenance_code(depth_cm, area_cm2)
+            else:
+                irc_cat = 'Category B (Standard Pothole Cavity)'
+                irc_code = 'IRC:SP:77-Clause 4.1'
+                irc_act = 'Square cut, edge priming & Cold-Mix Bituminous Patching'
             
             df.at[idx, 'est_area_cm2'] = area_cm2
             df.at[idx, 'est_depth_cm'] = depth_cm
@@ -815,6 +992,9 @@ def fuse_data(detections, csv_path, output_path, lookahead_distance_m=3.5, defau
             df.at[idx, 'asphalt_mass_kg'] = mass_kg
             df.at[idx, 'repair_cost_inr'] = cost_inr
             df.at[idx, 'repair_cost_usd'] = cost_usd
+            df.at[idx, 'irc_category'] = irc_cat
+            df.at[idx, 'irc_code'] = irc_code
+            df.at[idx, 'irc_action'] = irc_act
     
     df.to_csv(output_path, index=False)
     
@@ -1147,12 +1327,22 @@ def process_ride_folder(folder, do_stabilize=True, force_stabilize=False, do_ret
         print(f"Aggregated Citywide Canonical Hazards: {canonical_hazards_count}")
     print("=" * 60)
 
+    # Generate executive municipal PDF inspection work-order
+    pdf_report_path = None
+    try:
+        from generate_inspection_report import generate_inspection_pdf
+        pdf_report_path = os.path.join(folder, 'RoadSense_Inspection_WorkOrder.pdf')
+        generate_inspection_pdf(fused_path, pdf_report_path)
+    except Exception as e:
+        print(f"  Note: Municipal PDF report generation skipped ({e})")
+
     return {
         "success": True,
         "folder": folder,
         "video_file": video_file,
         "csv_file": csv_file,
         "fused_csv": fused_path,
+        "pdf_report": pdf_report_path,
         "total_rows": len(df),
         "pothole_count": potholes,
         "severe_count": severe,
