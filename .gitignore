@@ -1,5 +1,6 @@
 # Large model exports (>50MB ONNX files, generated on demand via yolo export)
 *.onnx
+*.onnx.data
 
 # Datasets and archives (>100MB)
 *.zip

@@ -66,8 +66,8 @@ except ImportError:
 # Model selection: ensemble, segmentation, and detection
 SEG_MODEL = os.path.join(BASE_DIR, 'cv_pipeline', 'pothole_yolo11_seg.pt')
 V8_MODEL = os.path.join(BASE_DIR, 'cv_pipeline', 'pothole_yolov8.pt')
-SEG_ONNX = os.path.join(BASE_DIR, 'cv_pipeline', 'pothole_yolo11_seg.onnx')
-V8_ONNX = os.path.join(BASE_DIR, 'cv_pipeline', 'pothole_yolov8.onnx')
+SEG_ONNX = os.path.join(BASE_DIR, 'cv_pipeline', 'pothole_yolo11_seg_int8.onnx') if os.path.exists(os.path.join(BASE_DIR, 'cv_pipeline', 'pothole_yolo11_seg_int8.onnx')) else os.path.join(BASE_DIR, 'cv_pipeline', 'pothole_yolo11_seg.onnx')
+V8_ONNX = os.path.join(BASE_DIR, 'cv_pipeline', 'pothole_yolov8_int8.onnx') if os.path.exists(os.path.join(BASE_DIR, 'cv_pipeline', 'pothole_yolov8_int8.onnx')) else os.path.join(BASE_DIR, 'cv_pipeline', 'pothole_yolov8.onnx')
 MODEL_FILE = SEG_MODEL if os.path.exists(SEG_MODEL) else V8_MODEL
 MASTER_CSV = os.path.join(BASE_DIR, 'cv_pipeline', 'master_training_data.csv')
 
@@ -1237,11 +1237,16 @@ def append_to_master(new_df):
     print(f"  Normal:  {total_n} ({total_n/len(combined)*100:.1f}%)")
 
 
-def retrain_model():
-    """Retrain the ML model on the updated master dataset."""
-    print("\n[BONUS] Retraining ML model...")
+def retrain_model(train_transformer=True):
+    """Retrain the ML models on the updated master dataset."""
+    print("\n[BONUS] Retraining ML Sensor Fusion Models...")
     train_script = os.path.join(BASE_DIR, 'ml_pipeline', 'train_fusion_model.py')
     os.system(f'python "{train_script}"')
+    
+    if train_transformer:
+        print("\n[DEEP FUSION] Retraining Deep Cross-Attention Transformer Network...")
+        transformer_script = os.path.join(BASE_DIR, 'ml_pipeline', 'deep_fusion_transformer.py')
+        os.system(f'python "{transformer_script}"')
 
 
 def process_ride_folder(folder, do_stabilize=True, force_stabilize=False, do_retrain=False, conf_threshold=0.40, lookahead_distance_m=3.5, model_mode='ensemble', use_onnx=False):

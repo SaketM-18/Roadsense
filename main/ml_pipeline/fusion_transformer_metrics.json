@@ -1,0 +1,97 @@
+{
+  "peak_val_f1": 0.5499,
+  "final_val_auc": 0.8461,
+  "training_time_sec": 137.4,
+  "epochs_history": [
+    {
+      "epoch": 1,
+      "train_loss": 1.0105,
+      "val_f1": 0.49,
+      "val_prec": 1.0,
+      "val_rec": 0.3245,
+      "val_auc": 0.7308,
+      "depth_mae_cm": 0.04
+    },
+    {
+      "epoch": 2,
+      "train_loss": 0.9164,
+      "val_f1": 0.4712,
+      "val_prec": 0.4174,
+      "val_rec": 0.5408,
+      "val_auc": 0.776,
+      "depth_mae_cm": 0.03
+    },
+    {
+      "epoch": 3,
+      "train_loss": 0.8755,
+      "val_f1": 0.4891,
+      "val_prec": 0.3705,
+      "val_rec": 0.7196,
+      "val_auc": 0.8115,
+      "depth_mae_cm": 0.02
+    },
+    {
+      "epoch": 4,
+      "train_loss": 0.8426,
+      "val_f1": 0.5079,
+      "val_prec": 0.3944,
+      "val_rec": 0.713,
+      "val_auc": 0.8203,
+      "depth_mae_cm": 0.02
+    },
+    {
+      "epoch": 5,
+      "train_loss": 0.8192,
+      "val_f1": 0.5433,
+      "val_prec": 0.4695,
+      "val_rec": 0.6446,
+      "val_auc": 0.8257,
+      "depth_mae_cm": 0.01
+    },
+    {
+      "epoch": 6,
+      "train_loss": 0.8072,
+      "val_f1": 0.5034,
+      "val_prec": 0.3804,
+      "val_rec": 0.7439,
+      "val_auc": 0.8294,
+      "depth_mae_cm": 0.02
+    },
+    {
+      "epoch": 7,
+      "train_loss": 0.7862,
+      "val_f1": 0.5441,
+      "val_prec": 0.4597,
+      "val_rec": 0.6667,
+      "val_auc": 0.8416,
+      "depth_mae_cm": 0.02
+    },
+    {
+      "epoch": 8,
+      "train_loss": 0.7665,
+      "val_f1": 0.5499,
+      "val_prec": 0.4636,
+      "val_rec": 0.6755,
+      "val_auc": 0.8448,
+      "depth_mae_cm": 0.02
+    },
+    {
+      "epoch": 9,
+      "train_loss": 0.7584,
+      "val_f1": 0.5326,
+      "val_prec": 0.4219,
+      "val_rec": 0.7219,
+      "val_auc": 0.8452,
+      "depth_mae_cm": 0.01
+    },
+    {
+      "epoch": 10,
+      "train_loss": 0.7511,
+      "val_f1": 0.5341,
+      "val_prec": 0.4223,
+      "val_rec": 0.7263,
+      "val_auc": 0.8461,
+      "depth_mae_cm": 0.02
+    }
+  ]
+}
