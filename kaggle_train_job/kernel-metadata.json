@@ -11,7 +11,9 @@
   "dataset_sources": [
     "farzadnekouei/pothole-image-segmentation-dataset",
     "raunakkesharwani/pothole-image-segmentation-dataset",
-    "lorenzoarcioni/road-damage-dataset-potholes-cracks-and-manholes"
+    "lorenzoarcioni/road-damage-dataset-potholes-cracks-and-manholes",
+    "muskanverma24/pothole-detection-dataset-yolov11-optimized",
+    "rogersinghchugh/road-damage-detection-yolo-v-11"
   ],
   "competition_sources": [],
   "kernel_sources": [],

@@ -8,7 +8,7 @@ import json
 
 print("=" * 70)
 print("ROADSENSE — Real-World YOLO11 Mega-Dataset Instance Segmentation")
-print("Data Sources: Farzad + Raunak + Arcioni (3,000+ Annotated Scenes)")
+print("Data Sources: Farzad + Raunak + Arcioni + Muskan + Roger Singh")
 print("Classes: [0: Pothole, 1: Crack, 2: Manhole]")
 print("=" * 70)
 
@@ -53,138 +53,121 @@ def safe_link_or_copy(src, dst):
     except Exception:
         shutil.copy2(src, dst)
 
+def normalize_seg_label(line):
+    """
+    Standardizes YOLO annotations for YOLO11 Instance Segmentation:
+    1. Converts 5-token bounding boxes [cls, cx, cy, w, h] to 4-point polygon rectangles (8 coords).
+    2. Keeps existing polygon annotations (coords >= 6, even count).
+    3. Safely maps class IDs into [0, 1, 2] (0: pothole, 1: crack, 2: manhole).
+    4. Clamps all coordinates to [0.0, 1.0].
+    """
+    tokens = line.strip().split()
+    if not tokens:
+        return None
+    try:
+        raw_cls = int(float(tokens[0]))
+        # Map class safely: 0 -> pothole, 1 -> crack, 2+ -> manhole / defect
+        cls_id = 0 if raw_cls == 0 else (1 if raw_cls in [1, 2] else 2)
+        coords = [float(x) for x in tokens[1:]]
+
+        # Bounding box case (cx, cy, w, h) -> convert to 4-point polygon
+        if len(coords) == 4:
+            cx, cy, w, h = coords
+            x1 = max(0.0, min(1.0, cx - w / 2))
+            y1 = max(0.0, min(1.0, cy - h / 2))
+            x2 = max(0.0, min(1.0, cx + w / 2))
+            y2 = max(0.0, min(1.0, cy - h / 2))
+            x3 = max(0.0, min(1.0, cx + w / 2))
+            y3 = max(0.0, min(1.0, cy + h / 2))
+            x4 = max(0.0, min(1.0, cx - w / 2))
+            y4 = max(0.0, min(1.0, cy + h / 2))
+            return f"{cls_id} {x1:.6f} {y1:.6f} {x2:.6f} {y2:.6f} {x3:.6f} {y3:.6f} {x4:.6f} {y4:.6f}"
+        
+        # Polygon segmentation case (at least 3 points = 6 coordinates)
+        elif len(coords) >= 6 and len(coords) % 2 == 0:
+            clamped = [max(0.0, min(1.0, c)) for c in coords]
+            coord_str = " ".join(f"{c:.6f}" for c in clamped)
+            return f"{cls_id} {coord_str}"
+    except Exception:
+        return None
+    return None
+
+def process_and_write_label(src_lbl_path, dst_lbl_path):
+    if not os.path.exists(src_lbl_path):
+        return False
+    try:
+        with open(src_lbl_path, "r", encoding="utf-8", errors="ignore") as f:
+            lines = f.readlines()
+        normalized_lines = []
+        for line in lines:
+            norm = normalize_seg_label(line)
+            if norm:
+                normalized_lines.append(norm)
+        if not normalized_lines:
+            return False
+        with open(dst_lbl_path, "w", encoding="utf-8") as f:
+            f.write("\n".join(normalized_lines) + "\n")
+        return True
+    except Exception:
+        return False
+
 # 3. Discover and Ingest All Mounted Kaggle Datasets
 input_root = "/kaggle/input"
 print("\nScanning all mounted Kaggle datasets in /kaggle/input:")
-for entry in os.listdir(input_root):
-    entry_path = os.path.join(input_root, entry)
-    print(f" • Found: {entry}")
+if os.path.exists(input_root):
+    for entry in os.listdir(input_root):
+        print(f" • Found: {entry}")
 
-ds1_count = 0
-ds2_count = 0
-ds3_count = 0
-
-# A. Ingest Farzad Pothole Segmentation Dataset (farzadnekouei)
-farzad_train_img = None
-farzad_val_img = None
-
+# Find all image-label directory pairs
+pair_counts = {}
 for root, dirs, files in os.walk(input_root):
-    norm = root.replace("\\", "/").lower()
-    if "farzad" in norm or "pothole_segmentation_yolov8" in norm:
-        if "train" in norm and "images" in dirs:
-            farzad_train_img = os.path.join(root, "images")
-        elif ("val" in norm or "valid" in norm) and "images" in dirs:
-            farzad_val_img = os.path.join(root, "images")
-
-if farzad_train_img:
-    farzad_train_lbl = farzad_train_img.replace("images", "labels")
-    for img_file in os.listdir(farzad_train_img):
-        if img_file.lower().endswith(('.jpg', '.jpeg', '.png')):
-            base = os.path.splitext(img_file)[0]
-            lbl_file = base + ".txt"
-            src_img = os.path.join(farzad_train_img, img_file)
-            src_lbl = os.path.join(farzad_train_lbl, lbl_file)
-            if os.path.exists(src_lbl):
-                dst_img = os.path.join(train_img_dir, f"fzd_{img_file}")
-                dst_lbl = os.path.join(train_lbl_dir, f"fzd_{lbl_file}")
-                safe_link_or_copy(src_img, dst_img)
-                safe_link_or_copy(src_lbl, dst_lbl)
-                ds1_count += 1
-
-if farzad_val_img:
-    farzad_val_lbl = farzad_val_img.replace("images", "labels")
-    for img_file in os.listdir(farzad_val_img):
-        if img_file.lower().endswith(('.jpg', '.jpeg', '.png')):
-            base = os.path.splitext(img_file)[0]
-            lbl_file = base + ".txt"
-            src_img = os.path.join(farzad_val_img, img_file)
-            src_lbl = os.path.join(farzad_val_lbl, lbl_file)
-            if os.path.exists(src_lbl):
-                dst_img = os.path.join(val_img_dir, f"fzd_{img_file}")
-                dst_lbl = os.path.join(val_lbl_dir, f"fzd_{lbl_file}")
-                safe_link_or_copy(src_img, dst_img)
-                safe_link_or_copy(src_lbl, dst_lbl)
-
-print(f"[Dataset 1 - Farzad] Ingested {ds1_count} high-density polygon pothole samples.")
-
-# B. Ingest Raunak Kesharwani Segmentation Dataset
-rk_train_img = None
-rk_val_img = None
-
-for root, dirs, files in os.walk(input_root):
-    norm = root.replace("\\", "/").lower()
-    if "raunak" in norm or "kesharwani" in norm:
-        if "train" in norm and "images" in dirs:
-            rk_train_img = os.path.join(root, "images")
-        elif ("val" in norm or "valid" in norm) and "images" in dirs:
-            rk_val_img = os.path.join(root, "images")
-
-if rk_train_img:
-    rk_train_lbl = rk_train_img.replace("images", "labels")
-    for img_file in os.listdir(rk_train_img):
-        if img_file.lower().endswith(('.jpg', '.jpeg', '.png')):
-            base = os.path.splitext(img_file)[0]
-            lbl_file = base + ".txt"
-            src_img = os.path.join(rk_train_img, img_file)
-            src_lbl = os.path.join(rk_train_lbl, lbl_file)
-            if os.path.exists(src_lbl):
-                dst_img = os.path.join(train_img_dir, f"rk_{img_file}")
-                dst_lbl = os.path.join(train_lbl_dir, f"rk_{lbl_file}")
-                safe_link_or_copy(src_img, dst_img)
-                safe_link_or_copy(src_lbl, dst_lbl)
-                ds2_count += 1
-
-if rk_val_img:
-    rk_val_lbl = rk_val_img.replace("images", "labels")
-    for img_file in os.listdir(rk_val_img):
-        if img_file.lower().endswith(('.jpg', '.jpeg', '.png')):
-            base = os.path.splitext(img_file)[0]
-            lbl_file = base + ".txt"
-            src_img = os.path.join(rk_val_img, img_file)
-            src_lbl = os.path.join(rk_val_lbl, lbl_file)
-            if os.path.exists(src_lbl):
-                dst_img = os.path.join(val_img_dir, f"rk_{img_file}")
-                dst_lbl = os.path.join(val_lbl_dir, f"rk_{lbl_file}")
-                safe_link_or_copy(src_img, dst_img)
-                safe_link_or_copy(src_lbl, dst_lbl)
-
-print(f"[Dataset 2 - Raunak] Ingested {ds2_count} diverse road pothole segmentation samples.")
-
-# C. Ingest Lorenzo Arcioni Multi-Class Road Damage (Potholes, Cracks, Manholes)
-rdd_images_dir = None
-rdd_labels_dir = None
-
-for root, dirs, files in os.walk(input_root):
-    norm = root.replace("\\", "/").lower()
-    if "road-damage" in norm or "arcioni" in norm:
-        if "labels" in dirs and "labels-yolo" not in os.path.join(root, "labels").lower():
-            rdd_labels_dir = os.path.join(root, "labels")
-        if "images" in dirs:
-            rdd_images_dir = os.path.join(root, "images")
-
-if rdd_images_dir and rdd_labels_dir:
-    all_imgs = [f for f in os.listdir(rdd_images_dir) if f.lower().endswith(('.jpg', '.jpeg', '.png'))]
-    random.shuffle(all_imgs)
-    
-    split_idx = int(0.85 * len(all_imgs))
-    train_rdd = all_imgs[:split_idx]
-    val_rdd = all_imgs[split_idx:]
-    
-    for split_imgs, target_i_dir, target_l_dir in [(train_rdd, train_img_dir, train_lbl_dir), (val_rdd, val_img_dir, val_lbl_dir)]:
-        for img_file in split_imgs:
-            base = os.path.splitext(img_file)[0]
-            lbl_file = base + ".txt"
-            src_img = os.path.join(rdd_images_dir, img_file)
-            src_lbl = os.path.join(rdd_labels_dir, lbl_file)
+    if "images" in dirs:
+        img_dir = os.path.join(root, "images")
+        lbl_dir = os.path.join(root, "labels")
+        if not os.path.exists(lbl_dir):
+            parent = os.path.dirname(root)
+            alt_lbl = os.path.join(parent, "labels")
+            if os.path.exists(alt_lbl):
+                lbl_dir = alt_lbl
+        
+        if os.path.exists(lbl_dir):
+            norm_path = root.replace("\\", "/").lower()
+            dataset_name = norm_path.split("/kaggle/input/")[-1].split("/")[0] if "/kaggle/input/" in norm_path else "dataset"
             
-            if os.path.exists(src_lbl):
-                dst_img = os.path.join(target_i_dir, f"arc_{img_file}")
-                dst_lbl = os.path.join(target_l_dir, f"arc_{lbl_file}")
-                safe_link_or_copy(src_img, dst_img)
-                safe_link_or_copy(src_lbl, dst_lbl)
-                ds3_count += 1
+            # Determine split
+            is_val = any(k in norm_path for k in ["/val", "/valid", "/test", "_val", "_valid"])
+            
+            valid_images = [f for f in os.listdir(img_dir) if f.lower().endswith(('.jpg', '.jpeg', '.png', '.bmp'))]
+            
+            # If not explicitly split, split 85/15
+            if not is_val and not any(k in norm_path for k in ["/train", "_train"]):
+                random.shuffle(valid_images)
+                split_idx = int(0.85 * len(valid_images))
+                splits = [(valid_images[:split_idx], False), (valid_images[split_idx:], True)]
+            else:
+                splits = [(valid_images, is_val)]
+                
+            for img_list, target_is_val in splits:
+                target_i = val_img_dir if target_is_val else train_img_dir
+                target_l = val_lbl_dir if target_is_val else train_lbl_dir
+                
+                for img_name in img_list:
+                    base = os.path.splitext(img_name)[0]
+                    src_img = os.path.join(img_dir, img_name)
+                    src_lbl = os.path.join(lbl_dir, f"{base}.txt")
+                    
+                    dst_img_name = f"{dataset_name[:6]}_{img_name}"
+                    dst_lbl_name = f"{dataset_name[:6]}_{base}.txt"
+                    dst_img = os.path.join(target_i, dst_img_name)
+                    dst_lbl = os.path.join(target_l, dst_lbl_name)
+                    
+                    if process_and_write_label(src_lbl, dst_lbl):
+                        safe_link_or_copy(src_img, dst_img)
+                        pair_counts[dataset_name] = pair_counts.get(dataset_name, 0) + 1
 
-print(f"[Dataset 3 - Arcioni] Ingested {ds3_count} multi-class samples (Potholes, Cracks, Manholes).")
+print("\nIngestion Summary by Dataset:")
+for name, cnt in pair_counts.items():
+    print(f" • {name}: {cnt} validated polygon-segmented scenes")
 
 total_train = len(os.listdir(train_img_dir))
 total_val = len(os.listdir(val_img_dir))

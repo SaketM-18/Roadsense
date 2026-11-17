@@ -24,6 +24,8 @@ kaggle_train_job/output/
 kaggle_train_job/output_v2/
 kaggle_train_job/output_v3/
 kaggle_train_job/output_seg/
+kaggle_train_job/output_err/
+kaggle_train_job/output_live/
 
 # Microsoft Office temporary lock files
 ~$*.docx
