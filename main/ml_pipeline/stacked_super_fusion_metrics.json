@@ -1,0 +1,14 @@
+{
+  "stacked_auc": 0.8905,
+  "stacked_f1": 0.6055,
+  "stacked_precision": 0.8627,
+  "stacked_recall": 0.4664,
+  "single_transformer_auc": 0.8851,
+  "single_transformer_f1": 0.6198,
+  "learned_weights": {
+    "transformer": 3.7187,
+    "physics_gbdt": 1.3749,
+    "state_space_depth": -0.0367,
+    "intercept": 2.0683
+  }
+}

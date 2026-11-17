@@ -1,97 +1,115 @@
 {
-  "peak_val_f1": 0.5499,
-  "final_val_auc": 0.8461,
-  "training_time_sec": 137.4,
+  "peak_val_f1": 0.6107,
+  "final_val_auc": 0.8819,
+  "training_time_sec": 123.3,
   "epochs_history": [
     {
       "epoch": 1,
-      "train_loss": 1.0105,
-      "val_f1": 0.49,
-      "val_prec": 1.0,
-      "val_rec": 0.3245,
-      "val_auc": 0.7308,
-      "depth_mae_cm": 0.04
+      "train_loss": 0.1082,
+      "val_auc": 0.7492,
+      "val_f1": 0.4975,
+      "val_precision": 1.0,
+      "val_recall": 0.3311,
+      "mae_depth_cm": 0.039
     },
     {
       "epoch": 2,
-      "train_loss": 0.9164,
-      "val_f1": 0.4712,
-      "val_prec": 0.4174,
-      "val_rec": 0.5408,
-      "val_auc": 0.776,
-      "depth_mae_cm": 0.03
+      "train_loss": 0.0714,
+      "val_auc": 0.7752,
+      "val_f1": 0.49,
+      "val_precision": 1.0,
+      "val_recall": 0.3245,
+      "mae_depth_cm": 0.03
     },
     {
       "epoch": 3,
-      "train_loss": 0.8755,
-      "val_f1": 0.4891,
-      "val_prec": 0.3705,
-      "val_rec": 0.7196,
-      "val_auc": 0.8115,
-      "depth_mae_cm": 0.02
+      "train_loss": 0.0644,
+      "val_auc": 0.813,
+      "val_f1": 0.5066,
+      "val_precision": 0.9935,
+      "val_recall": 0.34,
+      "mae_depth_cm": 0.027
     },
     {
       "epoch": 4,
-      "train_loss": 0.8426,
-      "val_f1": 0.5079,
-      "val_prec": 0.3944,
-      "val_rec": 0.713,
-      "val_auc": 0.8203,
-      "depth_mae_cm": 0.02
+      "train_loss": 0.0608,
+      "val_auc": 0.8202,
+      "val_f1": 0.509,
+      "val_precision": 0.9936,
+      "val_recall": 0.3422,
+      "mae_depth_cm": 0.025
     },
     {
       "epoch": 5,
-      "train_loss": 0.8192,
-      "val_f1": 0.5433,
-      "val_prec": 0.4695,
-      "val_rec": 0.6446,
-      "val_auc": 0.8257,
-      "depth_mae_cm": 0.01
+      "train_loss": 0.0553,
+      "val_auc": 0.8517,
+      "val_f1": 0.5386,
+      "val_precision": 0.9396,
+      "val_recall": 0.3775,
+      "mae_depth_cm": 0.018
     },
     {
       "epoch": 6,
-      "train_loss": 0.8072,
-      "val_f1": 0.5034,
-      "val_prec": 0.3804,
-      "val_rec": 0.7439,
-      "val_auc": 0.8294,
-      "depth_mae_cm": 0.02
+      "train_loss": 0.0518,
+      "val_auc": 0.8504,
+      "val_f1": 0.5624,
+      "val_precision": 0.8821,
+      "val_recall": 0.4128,
+      "mae_depth_cm": 0.016
     },
     {
       "epoch": 7,
-      "train_loss": 0.7862,
-      "val_f1": 0.5441,
-      "val_prec": 0.4597,
-      "val_rec": 0.6667,
-      "val_auc": 0.8416,
-      "depth_mae_cm": 0.02
+      "train_loss": 0.0498,
+      "val_auc": 0.8617,
+      "val_f1": 0.5737,
+      "val_precision": 0.72,
+      "val_recall": 0.4768,
+      "mae_depth_cm": 0.017
     },
     {
       "epoch": 8,
-      "train_loss": 0.7665,
-      "val_f1": 0.5499,
-      "val_prec": 0.4636,
-      "val_rec": 0.6755,
-      "val_auc": 0.8448,
-      "depth_mae_cm": 0.02
+      "train_loss": 0.0479,
+      "val_auc": 0.8759,
+      "val_f1": 0.5858,
+      "val_precision": 0.7955,
+      "val_recall": 0.4636,
+      "mae_depth_cm": 0.013
     },
     {
       "epoch": 9,
-      "train_loss": 0.7584,
-      "val_f1": 0.5326,
-      "val_prec": 0.4219,
-      "val_rec": 0.7219,
-      "val_auc": 0.8452,
-      "depth_mae_cm": 0.01
+      "train_loss": 0.0452,
+      "val_auc": 0.8796,
+      "val_f1": 0.6019,
+      "val_precision": 0.7584,
+      "val_recall": 0.4989,
+      "mae_depth_cm": 0.015
     },
     {
       "epoch": 10,
-      "train_loss": 0.7511,
-      "val_f1": 0.5341,
-      "val_prec": 0.4223,
-      "val_rec": 0.7263,
-      "val_auc": 0.8461,
-      "depth_mae_cm": 0.02
+      "train_loss": 0.0435,
+      "val_auc": 0.8819,
+      "val_f1": 0.6107,
+      "val_precision": 0.8102,
+      "val_recall": 0.4901,
+      "mae_depth_cm": 0.012
+    },
+    {
+      "epoch": 11,
+      "train_loss": 0.0425,
+      "val_auc": 0.8868,
+      "val_f1": 0.6104,
+      "val_precision": 0.7755,
+      "val_recall": 0.5033,
+      "mae_depth_cm": 0.013
+    },
+    {
+      "epoch": 12,
+      "train_loss": 0.0411,
+      "val_auc": 0.8873,
+      "val_f1": 0.6079,
+      "val_precision": 0.7887,
+      "val_recall": 0.4945,
+      "mae_depth_cm": 0.013
     }
   ]
 }
