@@ -198,9 +198,62 @@
             opacity: 0;
         }
 
-        /* ====== DARK MAP FILTER ====== */
-        .leaflet-tile {
-            filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(92%);
+        /* ====== LEAFLET DARK CONTROLS & THEME ====== */
+        .leaflet-control-zoom a {
+            background: rgba(13, 16, 23, 0.88) !important;
+            color: var(--brand-main) !important;
+            border: 1px solid var(--border) !important;
+            backdrop-filter: blur(8px);
+        }
+        .leaflet-control-zoom a:hover {
+            background: rgba(204, 255, 0, 0.18) !important;
+            color: #ffffff !important;
+        }
+        .leaflet-control-layers {
+            background: rgba(13, 16, 23, 0.92) !important;
+            border: 1px solid var(--border) !important;
+            border-radius: var(--radius-sm) !important;
+            color: var(--text-primary) !important;
+            font-family: var(--font-mono) !important;
+            font-size: 11px !important;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.6) !important;
+        }
+        .leaflet-control-layers-toggle {
+            background-color: rgba(13, 16, 23, 0.88) !important;
+            border-radius: 4px;
+        }
+        .leaflet-control-layers-base label {
+            color: var(--text-secondary) !important;
+            cursor: pointer;
+            margin: 4px 0;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .leaflet-control-layers-base label:hover {
+            color: var(--brand-main) !important;
+        }
+        .leaflet-control-attribution {
+            background: rgba(4, 5, 8, 0.8) !important;
+            color: var(--text-muted) !important;
+            font-size: 9px !important;
+            backdrop-filter: blur(4px);
+        }
+        .leaflet-control-attribution a {
+            color: var(--text-secondary) !important;
+        }
+        .leaflet-popup-content-wrapper {
+            background: rgba(13, 16, 23, 0.95) !important;
+            color: #ffffff !important;
+            border: 1px solid var(--brand-main) !important;
+            border-radius: 8px !important;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 0 20px rgba(204, 255, 0, 0.25) !important;
+        }
+        .leaflet-popup-tip {
+            background: rgba(13, 16, 23, 0.95) !important;
+            border: 1px solid var(--brand-main) !important;
         }
 
         /* ====== AURORA GRADIENT ORBS ====== */
@@ -3686,13 +3739,45 @@
         let mapPolylines = [];
         let mapMarkers = [];
 
+        let layerControl = null;
+
         const initMap = () => {
             if (map) return;
-            map = L.map('map').setView([12.9716, 77.5946], 13);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; OpenStreetMap',
-                maxZoom: 20
-            }).addTo(map);
+            map = L.map('map', {
+                preferCanvas: true,
+                zoomControl: true
+            }).setView([12.9716, 77.5946], 13);
+
+            // Esri World Street Map: 100% Free, NO API Key, NO 403 Blocks, Crisp Road Names
+            const streetView = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+                attribution: 'Tiles &copy; Esri',
+                maxZoom: 19
+            });
+
+            // Esri Satellite Imagery
+            const satelliteView = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                attribution: 'Tiles &copy; Esri',
+                maxZoom: 19
+            });
+
+            // Esri Dark Gray Canvas
+            const darkCanvas = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+                attribution: 'Tiles &copy; Esri',
+                maxZoom: 16
+            });
+
+            // Default: Clean, crisp, fully labeled street map
+            streetView.addTo(map);
+
+            const baseMaps = {
+                "Street Map": streetView,
+                "Satellite View": satelliteView,
+                "Dark Canvas": darkCanvas
+            };
+
+            if (!layerControl) {
+                layerControl = L.control.layers(baseMaps, null, { position: 'topright' }).addTo(map);
+            }
         };
 
         const rHexColors = ['', '#00FF88', '#88FF00', '#F1E108', '#FF6B00', '#FF2222'];

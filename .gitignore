@@ -1,3 +1,8 @@
+# July baseline reference folder
+july_yolov8_baseline/
+main/cv_pipeline/*_nov_segment*
+main/cv_pipeline/*_clean.pt
+
 # Large model exports (>50MB ONNX files, generated on demand via yolo export)
 *.onnx
 *.onnx.data

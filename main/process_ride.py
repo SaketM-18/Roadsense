@@ -68,7 +68,7 @@ SEG_MODEL = os.path.join(BASE_DIR, 'cv_pipeline', 'pothole_yolo11_seg.pt')
 V8_MODEL = os.path.join(BASE_DIR, 'cv_pipeline', 'pothole_yolov8.pt')
 SEG_ONNX = os.path.join(BASE_DIR, 'cv_pipeline', 'pothole_yolo11_seg_int8.onnx') if os.path.exists(os.path.join(BASE_DIR, 'cv_pipeline', 'pothole_yolo11_seg_int8.onnx')) else os.path.join(BASE_DIR, 'cv_pipeline', 'pothole_yolo11_seg.onnx')
 V8_ONNX = os.path.join(BASE_DIR, 'cv_pipeline', 'pothole_yolov8_int8.onnx') if os.path.exists(os.path.join(BASE_DIR, 'cv_pipeline', 'pothole_yolov8_int8.onnx')) else os.path.join(BASE_DIR, 'cv_pipeline', 'pothole_yolov8.onnx')
-MODEL_FILE = SEG_MODEL if os.path.exists(SEG_MODEL) else V8_MODEL
+MODEL_FILE = V8_MODEL
 MASTER_CSV = os.path.join(BASE_DIR, 'cv_pipeline', 'master_training_data.csv')
 
 
@@ -382,6 +382,11 @@ def run_yolo(video_path, conf_threshold=0.40, evidence_dir=None, model_mode='ens
                 for r in r_det:
                     for box in r.boxes:
                         bx1, by1, bx2, by2 = map(int, box.xyxy[0].cpu().numpy())
+                        bw = bx2 - bx1
+                        bh = by2 - by1
+                        # Reject macro-hallucinations covering entire street (>20% frame area)
+                        if (bw * bh) / (w * h) > 0.20 or bw > 0.75 * w or bh > 0.60 * h:
+                            continue
                         if (by1 + by2) / 2 < mask_y:
                             cls_id = int(box.cls[0])
                             lbl = model_det.names.get(cls_id, "").lower() if hasattr(model_det, 'names') and model_det.names else ""
@@ -404,6 +409,11 @@ def run_yolo(video_path, conf_threshold=0.40, evidence_dir=None, model_mode='ens
                     has_m = hasattr(r, 'masks') and r.masks is not None and len(r.masks) > 0
                     for i, box in enumerate(r.boxes):
                         bx1, by1, bx2, by2 = map(int, box.xyxy[0].cpu().numpy())
+                        bw = bx2 - bx1
+                        bh = by2 - by1
+                        # Reject macro-hallucinations covering entire street (>20% frame area)
+                        if (bw * bh) / (w * h) > 0.20 or bw > 0.75 * w or bh > 0.60 * h:
+                            continue
                         if (by1 + by2) / 2 < mask_y:
                             cls_id = int(box.cls[0])
                             lbl = model_seg.names.get(cls_id, "").lower() if hasattr(model_seg, 'names') and model_seg.names else ""
@@ -620,7 +630,7 @@ def run_yolo(video_path, conf_threshold=0.40, evidence_dir=None, model_mode='ens
                             box_area_pct = round((bw * bh) / (w * h) * 100, 2)
                         
                         snapshot_file = None
-                        if evidence_dir and snapshot_count < 25 and t_best_frame is not None:
+                        if evidence_dir and snapshot_count < 250 and t_best_frame is not None:
                             snap_frame = t_best_frame.copy()
                             
                             # Render semi-transparent polygon contour mask if segmentation is active
@@ -716,7 +726,7 @@ def run_yolo(video_path, conf_threshold=0.40, evidence_dir=None, model_mode='ens
                 box_area_pct = round((bw * bh) / (w * h) * 100, 2)
             
             snapshot_file = None
-            if evidence_dir and snapshot_count < 25 and t_best_frame is not None:
+            if evidence_dir and snapshot_count < 250 and t_best_frame is not None:
                 snap_frame = t_best_frame.copy()
                 if t_polygon is not None and len(t_polygon) >= 3:
                     pts = np.array(t_polygon, dtype=np.int32)
@@ -860,11 +870,10 @@ def fuse_data(detections, csv_path, output_path, lookahead_distance_m=3.5, defau
                 if p_mass is not None and p_mass > 0:
                     df.at[idx, 'asphalt_mass_kg'] = p_mass
             verified_yolo_detections += 1
-        # 2. Vision Ground Truth:
-        # Either sensor telemetry is absent in this ride (GPS-only recording),
-        # OR vehicle avoided/straddled the pothole or crawled at very low speed,
-        # BUT the camera temporally tracked the defect across frames
-        elif (not has_telemetry_sensor) or (hits >= 2) or (conf >= 0.60):
+        # 2. Vision Ground Truth (Strict Verification Gate):
+        # Only accept if sensors are not present (GPS-only survey),
+        # OR if camera temporally tracked the defect with high confidence AND vehicle had at least minor deflection (max_z >= 1.2)
+        elif (not has_telemetry_sensor) or (hits >= 3 and conf >= 0.70 and max_z >= 1.2):
             for idx in target_indices:
                 df.at[idx, 'Label'] = 1
                 df.at[idx, 'Source'] = 'Vision'
@@ -901,7 +910,7 @@ def fuse_data(detections, csv_path, output_path, lookahead_distance_m=3.5, defau
             if df.at[idx, 'Source'] == 'None':
                 df.at[idx, 'Source'] = 'Sensor'
                 # Disambiguate speedbreaker vs pothole using gyro pitch deflection and jerk
-                if 'gyro_y' in df.columns and abs(row['gyro_y']) > 40 and j < 65.0:
+                if 'gyro_y' in df.columns and abs(row['gyro_y']) > 40:
                     df.at[idx, 'Hazard_Type'] = 'Speedbreaker'
                 else:
                     df.at[idx, 'Hazard_Type'] = 'Pothole'
@@ -933,35 +942,29 @@ def fuse_data(detections, csv_path, output_path, lookahead_distance_m=3.5, defau
             area_pct = float(row.get('box_area_pct', 0.0))
             source = str(row.get('Source', 'None'))
             
-            # Severity grading: Use shock if available, or visual contour area if Vision-only
-            if source == 'Vision' or z < 1.0:
-                if area_pct >= 10.0:
-                    df.at[idx, 'Severity'] = 'Severe'
-                elif area_pct >= 3.0:
-                    df.at[idx, 'Severity'] = 'Moderate'
-                else:
-                    df.at[idx, 'Severity'] = 'Low'
+            htype = str(row.get('Hazard_Type', 'Pothole'))
+            # Severity grading: True Multi-Modal Classification
+            # Severe requires BOTH physical shock (z >= 2.5) AND localized visual cavity (area >= 2.5%), without being a speedbreaker
+            if htype == 'Pothole' and z >= 2.5 and area_pct >= 2.5:
+                df.at[idx, 'Severity'] = 'Severe'
+            elif z >= 1.4 or area_pct >= 1.0:
+                df.at[idx, 'Severity'] = 'Moderate'
             else:
-                if z >= 3.0:
-                    df.at[idx, 'Severity'] = 'Severe'
-                elif z >= 2.0:
-                    df.at[idx, 'Severity'] = 'Moderate'
-                else:
-                    df.at[idx, 'Severity'] = 'Low'
+                df.at[idx, 'Severity'] = 'Low'
                 
-            # Dimensional modeling (True Photogrammetric dimensions with sensor shock refinement)
+            # Dimensional modeling (realistic physical bounds)
             curr_area = float(row.get('est_area_cm2', 0.0))
             curr_depth = float(row.get('est_depth_cm', 0.0))
             
-            if curr_area > 0.0:
+            if curr_area > 0.0 and curr_area <= 6000.0:
                 area_cm2 = curr_area
                 if z >= 1.5:
-                    depth_cm = round(min(14.0, max(2.5, curr_depth + 0.5 * z)), 1)
+                    depth_cm = round(min(7.5, max(2.5, curr_depth + 0.3 * z)), 1)
                 else:
-                    depth_cm = curr_depth
+                    depth_cm = round(min(5.5, max(2.0, curr_depth)), 1)
             else:
-                area_cm2 = round(max(150.0, area_pct * 140.0), 1) if area_pct > 0 else round(max(100.0, max(z, 1.0) * 180.0), 1)
-                depth_cm = round(min(12.0, max(2.5, max(z, 1.0) * 1.65)), 1)
+                area_cm2 = round(min(4500.0, max(180.0, area_pct * 140.0)), 1) if area_pct > 0 else round(min(2500.0, max(120.0, max(z, 1.0) * 110.0)), 1)
+                depth_cm = round(min(7.0, max(2.5, max(z, 1.0) * 1.15)), 1)
             
             curr_vol = float(row.get('asphalt_volume_liters', 0.0))
             curr_mass = float(row.get('asphalt_mass_kg', 0.0))
@@ -1379,7 +1382,7 @@ if __name__ == '__main__':
     flag_no_stabilize = '--no-stabilize' in sys.argv
     flag_force_stabilize = '--force-stabilize' in sys.argv
     
-    model_mode = 'ensemble'
+    model_mode = 'v8'
     for a in sys.argv:
         if a.startswith('--model='):
             model_mode = a.split('=', 1)[1]
